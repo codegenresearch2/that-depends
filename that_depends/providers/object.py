@@ -2,13 +2,12 @@ import typing
 
 from that_depends.providers.base import AbstractProvider
 
+T_co = typing.TypeVar('T_co', covariant=True)
 
-T_co = typing.TypeVar("T_co", covariant=True)
-P = typing.ParamSpec("P")
-
+P = typing.ParamSpec('P')
 
 class Object(AbstractProvider[T_co]):
-    __slots__ = ("_obj",)
+    __slots__ = ('_obj',)
 
     def __init__(self, obj: T_co) -> None:
         super().__init__()
