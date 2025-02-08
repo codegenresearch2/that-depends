@@ -38,13 +38,35 @@ def async_settings_provider() -> providers.Singleton[Settings]:
     return providers.Singleton(Settings)
 
 
-def test_attr_getter_with_zero_attribute_depth(some_settings_provider: providers.Singleton[Settings]) -> None:
-    attr_getter = some_settings_provider.some_str_value
+@pytest.fixture
+def sync_settings_provider() -> providers.Singleton[Settings]:
+    return providers.Singleton(Settings)
+
+
+@pytest.fixture
+def resource_provider() -> providers.Resource[Settings]:
+    return providers.Resource(lambda: [Settings()])
+
+
+@pytest.fixture
+def context_resource_provider() -> providers.ContextResource[Settings]:
+    return providers.ContextResource(lambda: [Settings()])
+
+
+@pytest.fixture
+def selector_provider() -> providers.Selector[Settings]:
+    return providers.Selector(lambda: [Settings()])
+
+
+@pytest.mark.asyncio
+async def test_async_attr_getter_with_zero_attribute_depth(async_settings_provider: providers.Singleton[Settings]) -> None:
+    attr_getter = async_settings_provider.some_str_value
     assert attr_getter.sync_resolve() == Settings().some_str_value
 
 
-def test_attr_getter_with_more_than_zero_attribute_depth(some_settings_provider: providers.Singleton[Settings]) -> None:
-    attr_getter = some_settings_provider.nested1_attr.nested2_attr.some_const
+@pytest.mark.asyncio
+async def test_async_attr_getter_with_more_than_zero_attribute_depth(async_settings_provider: providers.Singleton[Settings]) -> None:
+    attr_getter = async_settings_provider.nested1_attr.nested2_attr.some_const
     assert attr_getter.sync_resolve() == Nested2().some_const
 
 
@@ -55,7 +77,7 @@ def test_attr_getter_with_more_than_zero_attribute_depth(some_settings_provider:
         (50, '50_lvl_field', 909234235)
     ]
 )
-def test_nesting_levels(field_count: int, test_field_name: str, test_value: str | int) -> None:
+def test_sync_nesting_levels(field_count: int, test_field_name: str, test_value: str | int) -> None:
     obj = NestingTestDTO()
     fields = [f'field_{i}' for i in range(1, field_count + 1)]
     random.shuffle(fields)
