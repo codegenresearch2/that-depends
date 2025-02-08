@@ -10,6 +10,7 @@ from that_depends import BaseContainer, fetch_context_item, providers
 from that_depends.providers import container_context
 from that_depends.providers.base import ResourceContext
 
+
 logger = logging.getLogger(__name__)
 
 
