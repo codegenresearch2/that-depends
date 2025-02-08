@@ -16,14 +16,16 @@ def inject(func: typing.Callable[P, T]) -> typing.Callable[P, T]:
     return _inject_to_sync(func)
 
 
-def _inject_to_async(func: typing.Callable[P, typing.Coroutine[typing.Any, typing.Any, T]]) -> typing.Callable[P, typing.Coroutine[typing.Any, typing.Any, T]]:
+async def _inject_to_async(func: typing.Callable[P, typing.Coroutine[typing.Any, typing.Any, T]]) -> typing.Callable[P, typing.Coroutine[typing.Any, typing.Any, T]]:
     @functools.wraps(func)
     async def inner(*args: P.args, **kwargs: P.kwargs) -> T:
         sig = inspect.signature(func)
         injected = False
-        for param in sig.parameters.values():
-            if param.name not in kwargs and isinstance(param.default, AbstractProvider):
-                kwargs[param.name] = await param.default()
+        for param_name, param in sig.parameters.items():
+            if param_name in kwargs:
+                continue
+            if isinstance(param.default, AbstractProvider):
+                kwargs[param_name] = await param.default.async_resolve()
                 injected = True
         if not injected:
             warnings.warn(
@@ -38,11 +40,14 @@ def _inject_to_sync(func: typing.Callable[P, T]) -> typing.Callable[P, T]:
     def inner(*args: P.args, **kwargs: P.kwargs) -> T:
         sig = inspect.signature(func)
         injected = False
-        for param in sig.parameters.values():
-            if param.name not in kwargs and isinstance(param.default, AbstractProvider):
-                if param.name in kwargs:
-                    raise RuntimeError(f"Injected arguments must not be redefined, {param.name=}")
-                kwargs[param.name] = param.default.sync_resolve()
+        for param_name, param in sig.parameters.items():
+            if param_name in kwargs:
+                if isinstance(param.default, AbstractProvider):
+                    msg = f"Injected arguments must not be redefined, {param_name=}"
+                    raise RuntimeError(msg)
+                continue
+            if isinstance(param.default, AbstractProvider):
+                kwargs[param_name] = param.default.sync_resolve()
                 injected = True
         if not injected:
             warnings.warn(
