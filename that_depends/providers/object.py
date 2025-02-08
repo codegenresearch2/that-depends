@@ -1,38 +1,26 @@
 import typing
+import asyncio
 
 from that_depends.providers.base import AbstractProvider
 
+P = typing.ParamSpec('P')
 
-T_co = typing.TypeVar("T_co", covariant=True)
-
-
-class Object(AbstractProvider[T_co]):
-    __slots__ = ("_obj",)
-
-    def __init__(self, obj: T_co) -> None:
-        super().__init__()
-        self._obj: typing.Final = obj
-
-    async def async_resolve(self) -> T_co:
-        return self._obj
-
-    def sync_resolve(self) -> T_co:
-        return self._obj
-
-
-# New Provider for Flexibility
 class EnhancedObject(AbstractProvider[T_co]):
-    __slots__ = ("_factory", "_args", "_kwargs", "_instance", "_resolving_lock")
+    __slots__ = '_factory', '_args', '_kwargs', '_override', '_instance', '_resolving_lock'
 
     def __init__(self, factory: typing.Callable[P, T_co], *args: P.args, **kwargs: P.kwargs) -> None:
         super().__init__()
-        self._factory: typing.Final = factory
-        self._args: typing.Final = args
-        self._kwargs: typing.Final = kwargs
-        self._instance: T_co | None = None
-        self._resolving_lock: typing.Final = asyncio.Lock()
+        self._factory = factory
+        self._args = args
+        self._kwargs = kwargs
+        self._override = None
+        self._instance = None
+        self._resolving_lock = asyncio.Lock()
 
     async def async_resolve(self) -> T_co:
+        if self._override is not None:
+            return typing.cast(T_co, self._override)
+
         if self._instance is not None:
             return self._instance
 
@@ -45,6 +33,9 @@ class EnhancedObject(AbstractProvider[T_co]):
             return self._instance
 
     def sync_resolve(self) -> T_co:
+        if self._override is not None:
+            return typing.cast(T_co, self._override)
+
         if self._instance is not None:
             return self._instance
 
@@ -59,17 +50,16 @@ class EnhancedObject(AbstractProvider[T_co]):
             self._instance = None
 
 
-# Maintaining Consistency in Resource Handling
 class CachedObject(AbstractProvider[T_co]):
-    __slots__ = ("_factory", "_args", "_kwargs", "_instance", "_resolving_lock")
+    __slots__ = '_factory', '_args', '_kwargs', '_instance', '_resolving_lock'
 
     def __init__(self, factory: typing.Callable[P, T_co], *args: P.args, **kwargs: P.kwargs) -> None:
         super().__init__()
-        self._factory: typing.Final = factory
-        self._args: typing.Final = args
-        self._kwargs: typing.Final = kwargs
-        self._instance: T_co | None = None
-        self._resolving_lock: typing.Final = asyncio.Lock()
+        self._factory = factory
+        self._args = args
+        self._kwargs = kwargs
+        self._instance = None
+        self._resolving_lock = asyncio.Lock()
 
     async def async_resolve(self) -> T_co:
         if self._instance is not None:
