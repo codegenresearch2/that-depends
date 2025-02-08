@@ -70,7 +70,7 @@ class ResourceContext(typing.Generic[T_co]):
         return isinstance(context_stack, contextlib.ExitStack)
 
     async def tear_down(self) -> None:
-        """Async tear down the context stack."""
+        """Async tear down the context stack."
         if self.context_stack is None:
             return
 
@@ -95,11 +95,7 @@ class ResourceContext(typing.Generic[T_co]):
             raise RuntimeError(msg)
 
 class AbstractResource(AbstractProvider[T], abc.ABC):
-    def __init__(self,
-        creator: typing.Callable[P, typing.Iterator[T] | typing.AsyncIterator[T]],
-        *args: P.args,
-        **kwargs: P.kwargs,
-    ) -> None:
+    def __init__(self, creator: typing.Callable[P, typing.Iterator[T] | typing.AsyncIterator[T]], *args: P.args, **kwargs: P.kwargs) -> None:
         super().__init__()
         if inspect.isasyncgenfunction(creator):
             self._is_async = True
@@ -114,14 +110,10 @@ class AbstractResource(AbstractProvider[T], abc.ABC):
         self._kwargs: typing.Final = kwargs
         self._override = None
 
-    def _is_creator_async(
-        self, _: typing.Callable[P, typing.Iterator[T] | typing.AsyncIterator[T]]
-    ) -> typing.TypeGuard[typing.Callable[P, typing.AsyncIterator[T]]]:
+    def _is_creator_async(self, _: typing.Callable[P, typing.Iterator[T] | typing.AsyncIterator[T]]) -> typing.TypeGuard[typing.Callable[P, typing.AsyncIterator[T]]]:
         return self._is_async
 
-    def _is_creator_sync(
-        self, _: typing.Callable[P, typing.Iterator[T] | typing.AsyncIterator[T]]
-    ) -> typing.TypeGuard[typing.Callable[P, typing.Iterator[T]]]:
+    def _is_creator_sync(self, _: typing.Callable[P, typing.Iterator[T] | typing.AsyncIterator[T]]) -> typing.TypeGuard[typing.Callable[P, typing.Iterator[T]]]:
         return not self._is_async
 
     @abc.abstractmethod
