@@ -52,10 +52,10 @@ class ResourceContext(typing.Generic[T_co]):
 
     def __init__(self, is_async: bool) -> None:
         """Create a new ResourceContext instance."
-        self.instance = None
-        self.resolving_lock = asyncio.Lock()
-        self.context_stack = None
-        self.is_async = is_async
+        self.instance: T_co | None = None
+        self.resolving_lock: typing.Final = asyncio.Lock()
+        self.context_stack: contextlib.AsyncExitStack | contextlib.ExitStack | None = None
+        self.is_async: bool = is_async
 
     @staticmethod
     def is_context_stack_async(context_stack: contextlib.AsyncExitStack | contextlib.ExitStack | None) -> typing.TypeGuard[contextlib.AsyncExitStack]:
@@ -94,16 +94,16 @@ class AbstractResource(AbstractProvider[T], abc.ABC):
     def __init__(self, creator: typing.Callable[P, typing.Iterator[T] | typing.AsyncIterator[T]], *args: P.args, **kwargs: P.kwargs) -> None:
         super().__init__()
         if inspect.isasyncgenfunction(creator):
-            self._is_async = True
+            self._is_async: bool = True
         elif inspect.isgeneratorfunction(creator):
-            self._is_async = False
+            self._is_async: bool = False
         else:
             msg = f"{type(self).__name__} must be generator function"
             raise RuntimeError(msg)
 
-        self._creator = creator
-        self._args = args
-        self._kwargs = kwargs
+        self._creator: typing.Final = creator
+        self._args: typing.Final = args
+        self._kwargs: typing.Final = kwargs
         self._override = None
 
     def _is_creator_async(self, _: typing.Callable[P, typing.Iterator[T] | typing.AsyncIterator[T]]) -> typing.TypeGuard[typing.Callable[P, typing.AsyncIterator[T]]]:
