@@ -12,6 +12,7 @@ from that_depends.providers.base import ResourceContext
 
 logger = logging.getLogger(__name__)
 
+
 def create_sync_context_resource() -> typing.Iterator[str]:
     logger.info("Resource initiated")
     yield f"sync {uuid.uuid4()}"
