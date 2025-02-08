@@ -4,12 +4,10 @@ import contextlib
 import inspect
 import typing
 
-
 T = typing.TypeVar("T")
 R = typing.TypeVar("R")
 P = typing.ParamSpec("P")
 T_co = typing.TypeVar("T_co", covariant=True)
-
 
 class AbstractProvider(typing.Generic[T_co], abc.ABC):
     """Abstract Provider Class."""
@@ -43,7 +41,6 @@ class AbstractProvider(typing.Generic[T_co], abc.ABC):
     def cast(self) -> T_co:
         """Returns self, but cast to the type of the provided value."
         return typing.cast(T_co, self)
-
 
 class ResourceContext(typing.Generic[T_co]):
     __slots__ = "context_stack", "instance", "resolving_lock", "is_async"
@@ -92,7 +89,6 @@ class ResourceContext(typing.Generic[T_co]):
         else:
             msg = "Cannot tear down async context in sync mode"
             raise RuntimeError(msg)
-
 
 class AbstractResource(AbstractProvider[T], abc.ABC):
     def __init__(self,
@@ -193,7 +189,6 @@ class AbstractResource(AbstractProvider[T], abc.ABC):
                 ),
             )
         return typing.cast(T, context.instance)
-
 
 class AbstractFactory(AbstractProvider[T], abc.ABC):
     """Abstract Factory Class."""
