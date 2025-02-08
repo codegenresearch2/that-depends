@@ -21,17 +21,18 @@ class Singleton(AbstractProvider[T_co]):
 
     async def async_resolve(self) -> T_co:
         # Ensure only one resolution happens at a time to prevent race conditions
+        if self._override is not None:
+            return typing.cast(T_co, self._override)
+
+        if self._instance is not None:
+            return self._instance
+
         async with self._resolving_lock:
-            if self._override is not None:
-                return typing.cast(T_co, self._override)
-
-            if self._instance is not None:
-                return self._instance
-
-            self._instance = self._factory(
-                *[await x.async_resolve() if isinstance(x, AbstractProvider) else x for x in self._args],  # type: ignore[arg-type]
-                **{k: await v.async_resolve() if isinstance(v, AbstractProvider) else v for k, v in self._kwargs.items()}  # type: ignore[arg-type]
-            )
+            if self._instance is None:
+                self._instance = self._factory(
+                    *[await x.async_resolve() if isinstance(x, AbstractProvider) else x for x in self._args],  # type: ignore[arg-type]
+                    **{k: await v.async_resolve() if isinstance(v, AbstractProvider) else v for k, v in self._kwargs.items()}  # type: ignore[arg-type]
+                )
             return self._instance
 
     def sync_resolve(self) -> T_co:
