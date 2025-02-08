@@ -28,45 +28,25 @@ class Settings:
 class NestingTestDTO: ...
 
 
-@pytest.fixture
-def some_settings_provider() -> providers.Singleton[Settings]:
-    return providers.Singleton(Settings)
-
-
-@pytest.fixture
-def async_settings_provider() -> providers.Singleton[Settings]:
-    return providers.Singleton(Settings)
-
-
-@pytest.fixture
-def sync_settings_provider() -> providers.Singleton[Settings]:
-    return providers.Singleton(Settings)
-
-
-@pytest.fixture
-def resource_provider() -> providers.Resource[Settings]:
-    return providers.Resource(lambda: [Settings()])
-
-
-@pytest.fixture
-def context_resource_provider() -> providers.ContextResource[Settings]:
-    return providers.ContextResource(lambda: [Settings()])
-
-
-@pytest.fixture
-def selector_provider() -> providers.Selector[Settings]:
-    return providers.Selector(lambda: [Settings()])
+@pytest.fixture(params=[providers.Singleton, providers.Factory, providers.AsyncFactory])
+def settings_provider(request):
+    if request.param == providers.Singleton:
+        return providers.Singleton(Settings)
+    elif request.param == providers.Factory:
+        return providers.Factory(Settings)
+    elif request.param == providers.AsyncFactory:
+        return providers.AsyncFactory(Settings)
 
 
 @pytest.mark.asyncio
-async def test_async_attr_getter_with_zero_attribute_depth(async_settings_provider: providers.Singleton[Settings]) -> None:
-    attr_getter = async_settings_provider.some_str_value
+async def test_async_attr_getter_with_zero_attribute_depth(settings_provider):
+    attr_getter = settings_provider.some_str_value
     assert attr_getter.sync_resolve() == Settings().some_str_value
 
 
 @pytest.mark.asyncio
-async def test_async_attr_getter_with_more_than_zero_attribute_depth(async_settings_provider: providers.Singleton[Settings]) -> None:
-    attr_getter = async_settings_provider.nested1_attr.nested2_attr.some_const
+async def test_async_attr_getter_with_more_than_zero_attribute_depth(settings_provider):
+    attr_getter = settings_provider.nested1_attr.nested2_attr.some_const
     assert attr_getter.sync_resolve() == Nested2().some_const
 
 
@@ -77,7 +57,7 @@ async def test_async_attr_getter_with_more_than_zero_attribute_depth(async_setti
         (50, '50_lvl_field', 909234235)
     ]
 )
-def test_sync_nesting_levels(field_count: int, test_field_name: str, test_value: str | int) -> None:
+def test_sync_nesting_levels(field_count: int, test_field_name: str, test_value: str | int):
     obj = NestingTestDTO()
     fields = [f'field_{i}' for i in range(1, field_count + 1)]
     random.shuffle(fields)
@@ -96,10 +76,10 @@ def test_sync_nesting_levels(field_count: int, test_field_name: str, test_value:
     assert attr_value == test_value
 
 
-def test_attr_getter_with_invalid_attribute(some_settings_provider: providers.Singleton[Settings]) -> None:
+def test_attr_getter_with_invalid_attribute(settings_provider):
     with pytest.raises(AttributeError):
-        some_settings_provider.nested1_attr.nested2_attr.__some_private__  # noqa: B018
+        settings_provider.nested1_attr.nested2_attr.__some_private__  # noqa: B018
     with pytest.raises(AttributeError):
-        some_settings_provider.nested1_attr.__another_private__  # noqa: B018
+        settings_provider.nested1_attr.__another_private__  # noqa: B018
     with pytest.raises(AttributeError):
-        some_settings_provider.nested1_attr._final_private_  # noqa: B018
+        settings_provider.nested1_attr._final_private_  # noqa: B018
