@@ -124,13 +124,13 @@ class AbstractResource(AbstractProvider[T_co], abc.ABC):
         self._kwargs: typing.Final = kwargs
 
     def _is_creator_async(self,
-        _: typing.Callable[P, typing.Iterator[T_co] | typing.AsyncIterator[T_co]]
-    ) -> typing.TypeGuard[typing.Callable[P, typing.AsyncIterator[T_co]]]:
+        _: typing.Callable[P, typing.Iterator[T_co] | typing.AsyncIterator[T_co]])
+    -> typing.TypeGuard[typing.Callable[P, typing.AsyncIterator[T_co]]]:
         return self._is_async
 
     def _is_creator_sync(self,
-        _: typing.Callable[P, typing.Iterator[T_co] | typing.AsyncIterator[T_co]]
-    ) -> typing.TypeGuard[typing.Callable[P, typing.Iterator[T_co]]]:
+        _: typing.Callable[P, typing.Iterator[T_co] | typing.AsyncIterator[T_co]])
+    -> typing.TypeGuard[typing.Callable[P, typing.Iterator[T_co]]]:
         return not self._is_async
 
     @abc.abstractmethod
