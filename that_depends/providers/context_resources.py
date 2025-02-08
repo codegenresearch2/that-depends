@@ -9,6 +9,7 @@ from types import TracebackType
 
 from that_depends.providers.base import AbstractResource, ResourceContext
 
+
 logger: typing.Final = logging.getLogger(__name__)
 T = typing.TypeVar("T")
 P = typing.ParamSpec("P")
@@ -110,7 +111,11 @@ def _get_container_context() -> dict[str, typing.Any]:
 
 
 def _is_container_context_async() -> bool:
-    """Check if the current container context is async."
+    """Check if the current container context is async.
+
+    :return: Whether the current container context is async.
+    :rtype: bool
+    """
     return typing.cast(bool, _get_container_context().get(_ASYNC_CONTEXT_KEY, False))
 
 
