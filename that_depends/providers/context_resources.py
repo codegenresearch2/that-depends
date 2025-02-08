@@ -1,4 +1,5 @@
 import typing
+import inspect
 import logging
 import uuid
 import warnings
@@ -12,7 +13,7 @@ from that_depends.providers.base import AbstractResource, ResourceContext
 
 logger: typing.Final = logging.getLogger(__name__)
 T_co = typing.TypeVar('T_co', covariant=True)
-P = typing.ParamSpec('P', covariant=True)
+P = typing.ParamSpec('P')
 _CONTAINER_CONTEXT: typing.Final[ContextVar[dict[str, typing.Any]]] = ContextVar('CONTAINER_CONTEXT')
 AppType = typing.TypeVar('AppType')
 Scope = typing.MutableMapping[str, typing.Any]
