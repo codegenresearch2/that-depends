@@ -1,6 +1,5 @@
-import inspect
-import logging
 import typing
+import logging
 import uuid
 import warnings
 from contextlib import asynccontextmanager, contextmanager
@@ -10,22 +9,22 @@ from types import TracebackType
 
 from that_depends.providers.base import AbstractResource, ResourceContext
 
-logger: typing.Final = logging.getLogger(__name__)
-T = typing.TypeVar("T")
-P = typing.ParamSpec("P")
-_CONTAINER_CONTEXT: typing.Final[ContextVar[dict[str, typing.Any]]] = ContextVar("CONTAINER_CONTEXT")
-AppType = typing.TypeVar("AppType")
+logger = logging.getLogger(__name__)
+T = typing.TypeVar('T')
+P = typing.ParamSpec('P')
+_CONTAINER_CONTEXT: typing.Final[ContextVar[dict[str, typing.Any]]] = ContextVar('CONTAINER_CONTEXT')
+AppType = typing.TypeVar('AppType')
 Scope = typing.MutableMapping[str, typing.Any]
 Message = typing.MutableMapping[str, typing.Any]
 Receive = typing.Callable[[], typing.Awaitable[Message]]
 Send = typing.Callable[[Message], typing.Awaitable[None]]
 ASGIApp = typing.Callable[[Scope, Receive, Send], typing.Awaitable[None]]
-_ASYNC_CONTEXT_KEY: typing.Final[str] = "__ASYNC_CONTEXT__"
+_ASYNC_CONTEXT_KEY: typing.Final[str] = '__ASYNC_CONTEXT__'
 
 ContextType = dict[str, typing.Any]
 
 @contextmanager
-def container_context(initial_context: ContextType | None = None) -> typing.Iterator[ContextType]:
+def sync_container_context(initial_context: ContextType | None = None) -> typing.Iterator[ContextType]:
     context = initial_context or {}
     context[_ASYNC_CONTEXT_KEY] = False
     token: Token[ContextType] = _CONTAINER_CONTEXT.set(context)
@@ -55,7 +54,7 @@ def async_container_context(initial_context: ContextType | None = None) -> typin
 
 class DIContextMiddleware:
     def __init__(self, app: ASGIApp) -> None:
-        self.app: typing.Final = app
+        self.app = app
 
     @async_container_context()
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
@@ -66,7 +65,7 @@ def _get_container_context() -> dict[str, typing.Any]:
     try:
         return _CONTAINER_CONTEXT.get()
     except LookupError as exc:
-        msg = "Context is not set. Use container_context"
+        msg = 'Context is not set. Use container_context'
         raise RuntimeError(msg) from exc
 
 
@@ -85,12 +84,12 @@ def fetch_context_item(key: str, default: typing.Any = None) -> typing.Any:  # n
 
 class ContextResource(AbstractResource[T]):
     __slots__ = (
-        "_is_async",
-        "_creator",
-        "_args",
-        "_kwargs",
-        "_override",
-        "_internal_name",
+        '_is_async',
+        '_creator',
+        '_args',
+        '_kwargs',
+        '_override',
+        '_internal_name',
     )
 
     def __init__(self,
@@ -98,7 +97,7 @@ class ContextResource(AbstractResource[T]):
                  *args: P.args,
                  **kwargs: P.kwargs) -> None:
         super().__init__(creator, *args, **kwargs)
-        self._internal_name: typing.Final = f"{creator.__name__}-{uuid.uuid4()}"
+        self._internal_name = f'{creator.__name__}-{uuid.uuid4()}'
 
     def _fetch_context(self) -> ResourceContext[T]:
         container_context = _get_container_context()
@@ -115,5 +114,6 @@ class AsyncContextResource(ContextResource[T]):
                  creator: typing.Callable[P, typing.AsyncIterator[T]],
                  *args: P.args,
                  **kwargs: P.kwargs) -> None:
-        warnings.warn("AsyncContextResource is deprecated, use ContextResource instead", RuntimeWarning, stacklevel=1)
+        warnings.warn('AsyncContextResource is deprecated, use ContextResource instead',
+                      RuntimeWarning, stacklevel=1)
         super().__init__(creator, *args, **kwargs)
