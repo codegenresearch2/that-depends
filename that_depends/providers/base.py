@@ -60,14 +60,14 @@ class ResourceContext(typing.Generic[T_co]):
             raise RuntimeError(msg)
 
     @staticmethod
-    def is_context_stack_sync(_
-                                _: contextlib.AsyncExitStack | contextlib.ExitStack | None
+    def is_context_stack_sync(_:
+                                contextlib.AsyncExitStack | contextlib.ExitStack | None
                                 ) -> typing.TypeGuard[contextlib.ExitStack]:
         return isinstance(_, contextlib.ExitStack)
 
     @staticmethod
-    def is_context_stack_async(_
-                                 _: contextlib.AsyncExitStack | contextlib.ExitStack | None
+    def is_context_stack_async(_:
+                                 contextlib.AsyncExitStack | contextlib.ExitStack | None
                                  ) -> typing.TypeGuard[contextlib.AsyncExitStack]:
         return isinstance(_, contextlib.AsyncExitStack)
 
@@ -113,14 +113,14 @@ class AbstractResource(AbstractProvider[T], abc.ABC):
         self._override = None
 
     @staticmethod
-    def _is_creator_async(_
-                           _: typing.Callable[P, typing.Iterator[T] | typing.AsyncIterator[T]]
+    def _is_creator_async(_:
+                           typing.Callable[P, typing.Iterator[T] | typing.AsyncIterator[T]]
                            ) -> typing.TypeGuard[typing.Callable[P, typing.AsyncIterator[T]]]:
         return isinstance(_, typing.Callable[P, typing.AsyncIterator[T]])
 
     @staticmethod
-    def _is_creator_sync(_
-                          _: typing.Callable[P, typing.Iterator[T] | typing.AsyncIterator[T]]
+    def _is_creator_sync(_:
+                          typing.Callable[P, typing.Iterator[T] | typing.AsyncIterator[T]]
                           ) -> typing.TypeGuard[typing.Callable[P, typing.Iterator[T]]]:
         return not isinstance(_, typing.Callable[P, typing.AsyncIterator[T]])
 
@@ -193,3 +193,15 @@ class AbstractResource(AbstractProvider[T], abc.ABC):
                 ),
             )
         return typing.cast(T, context.instance)
+
+
+class AbstractFactory(AbstractProvider[T], abc.ABC):
+    """Abstract Factory Class."""
+
+    @property
+    def provider(self) -> typing.Callable[[], typing.Coroutine[typing.Any, typing.Any, T]]:
+        return self.async_resolve
+
+    @property
+    def sync_provider(self) -> typing.Callable[[], T]:
+        return self.sync_resolve
