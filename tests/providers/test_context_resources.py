@@ -67,14 +67,14 @@ async def test_context_resource_without_context_init(context_resource: providers
         context_resource.sync_resolve()
 
 
-@sync_container_context()
+@container_context()
 async def test_context_resource(context_resource: providers.ContextResource[str]) -> None:
     context_resource_result = await context_resource()
 
     assert await context_resource() is context_resource_result
 
 
-@sync_container_context()
+@container_context()
 def test_sync_context_resource(sync_context_resource: providers.ContextResource[str]) -> None:
     context_resource_result = sync_context_resource.sync_resolve()
 
