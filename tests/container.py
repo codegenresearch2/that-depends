@@ -41,9 +41,6 @@ class DependentFactory:
     sync_resource: datetime.datetime
     async_resource: datetime.datetime
 
-    def sync_resolve(self) -> 'DependentFactory':
-        return self
-
 
 @dataclasses.dataclass(kw_only=True, slots=True)
 class FreeFactory:
@@ -62,12 +59,7 @@ class DIContainer(BaseContainer):
 
     simple_factory = providers.Factory(SimpleFactory, dep1="text", dep2=123)
     async_factory = providers.AsyncFactory(async_factory, async_resource.cast)
-    dependent_factory = providers.Factory(
-        DependentFactory,
-        simple_factory=simple_factory.cast,
-        sync_resource=sync_resource.cast,
-        async_resource=async_resource.cast,
-    )
+    dependent_factory = providers.Factory(DependentFactory, simple_factory=simple_factory.cast, sync_resource=sync_resource.cast, async_resource=async_resource.cast)
     singleton = providers.Singleton(SingletonFactory, dep1=True)
 
-    object = providers.Object(object(), name='object')
+    object = providers.Object(object())
