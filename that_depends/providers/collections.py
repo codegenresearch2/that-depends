@@ -34,14 +34,14 @@ class Selector(AbstractProvider[T_co]):
     async def async_resolve(self) -> T_co:
         selected_key: typing.Final = self._selector()
         if selected_key not in self._providers:
-            msg = f'No provider matches {selected_key}',
+            msg = f'No provider matches {selected_key}'  # noqa: ANN401
             raise RuntimeError(msg)
         return await self._providers[selected_key].async_resolve()
 
     def sync_resolve(self) -> T_co:
         selected_key: typing.Final = self._selector()
         if selected_key not in self._providers:
-            msg = f'No provider matches {selected_key}',
+            msg = f'No provider matches {selected_key}'  # noqa: ANN401
             raise RuntimeError(msg)
         return self._providers[selected_key].sync_resolve()
 
@@ -65,6 +65,9 @@ class List(AbstractProvider[list[T_co]]):
     def __getattr__(self, attr_name: str) -> typing.Any:
         raise AttributeError(f'{self.__class__.__name__} object has no attribute {attr_name}')
 
+    async def __call__(self) -> list[T_co]:
+        return await self.async_resolve()
+
 
 class Dict(AbstractProvider[dict[str, T_co]]):
     __slots__ = ('_providers',)
@@ -81,3 +84,6 @@ class Dict(AbstractProvider[dict[str, T_co]]):
 
     def __getattr__(self, attr_name: str) -> typing.Any:
         raise AttributeError(f'{self.__class__.__name__} object has no attribute {attr_name}')
+
+    async def __call__(self) -> dict[str, T_co]:
+        return await self.async_resolve()
