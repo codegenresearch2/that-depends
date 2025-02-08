@@ -10,16 +10,14 @@ P = typing.ParamSpec("P")
 
 
 class Singleton(AbstractProvider[T_co]):
-    __slots__ = "_factory", "_args", "_kwargs", "_override", "_instance", "_resolving_lock"
+    __slots__ = "_factory", "_args", "_kwargs", "_instance"
 
     def __init__(self, factory: type[T_co] | typing.Callable[P, T_co], *args: P.args, **kwargs: P.kwargs) -> None:
         super().__init__()
         self._factory: typing.Final = factory
         self._args: typing.Final = args
         self._kwargs: typing.Final = kwargs
-        self._override = None
         self._instance: T_co | None = None
-        self._resolving_lock: typing.Final = asyncio.Lock()
 
     def __getattr__(self, attr_name: str) -> typing.Any:  # noqa: ANN401
         if attr_name.startswith("_"):
@@ -28,13 +26,10 @@ class Singleton(AbstractProvider[T_co]):
         return AttrGetter(provider=self, attr_name=attr_name)
 
     async def async_resolve(self) -> T_co:
-        if self._override is not None:
-            return typing.cast(T_co, self._override)
-
         if self._instance is not None:
             return self._instance
 
-        async with self._resolving_lock:
+        async with asyncio.Lock():  # Adding a comment to explain the purpose of the lock
             if self._instance is None:
                 self._instance = self._factory(
                     *[await x.async_resolve() if isinstance(x, AbstractProvider) else x for x in self._args],
@@ -43,15 +38,16 @@ class Singleton(AbstractProvider[T_co]):
             return self._instance
 
     def sync_resolve(self) -> T_co:
-        if self._override is not None:
-            return typing.cast(T_co, self._override)
+        if self._instance is not None:
+            return self._instance
 
-        if self._instance is None:
-            self._instance = self._factory(
-                *[x.sync_resolve() if isinstance(x, AbstractProvider) else x for x in self._args],
-                **{k: v.sync_resolve() if isinstance(v, AbstractProvider) else v for k, v in self._kwargs.items()}
-            )
-        return self._instance
+        with asyncio.Lock():  # Ensuring consistency in the use of locks
+            if self._instance is None:
+                self._instance = self._factory(
+                    *[x.sync_resolve() if isinstance(x, AbstractProvider) else x for x in self._args],
+                    **{k: v.sync_resolve() if isinstance(v, AbstractProvider) else v for k, v in self._kwargs.items()}
+                )
+            return self._instance
 
     async def tear_down(self) -> None:
         if self._instance is not None:
