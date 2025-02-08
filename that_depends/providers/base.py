@@ -15,7 +15,7 @@ class AbstractProvider(typing.Generic[T_co], abc.ABC):
 
     def __init__(self) -> None:
         super().__init__()
-        self._override: typing.Any = None
+        self._override = None
 
     @abc.abstractmethod
     async def async_resolve(self) -> T_co:
@@ -52,21 +52,17 @@ class ResourceContext(typing.Generic[T_co]):
 
     def __init__(self, is_async: bool) -> None:
         """Create a new ResourceContext instance."
-        self.instance: T_co | None = None
-        self.resolving_lock: typing.Final = asyncio.Lock()
-        self.context_stack: contextlib.AsyncExitStack | contextlib.ExitStack | None = None
+        self.instance = None
+        self.resolving_lock = asyncio.Lock()
+        self.context_stack = None
         self.is_async = is_async
 
     @staticmethod
-    def is_context_stack_async(
-        context_stack: contextlib.AsyncExitStack | contextlib.ExitStack | None,
-    ) -> typing.TypeGuard[contextlib.AsyncExitStack]:
+    def is_context_stack_async(context_stack: contextlib.AsyncExitStack | contextlib.ExitStack | None) -> typing.TypeGuard[contextlib.AsyncExitStack]:
         return isinstance(context_stack, contextlib.AsyncExitStack)
 
     @staticmethod
-    def is_context_stack_sync(
-        context_stack: contextlib.AsyncExitStack | contextlib.ExitStack,
-    ) -> typing.TypeGuard[contextlib.ExitStack]:
+    def is_context_stack_sync(context_stack: contextlib.AsyncExitStack | contextlib.ExitStack) -> typing.TypeGuard[contextlib.ExitStack]:
         return isinstance(context_stack, contextlib.ExitStack)
 
     async def tear_down(self) -> None:
@@ -105,9 +101,9 @@ class AbstractResource(AbstractProvider[T], abc.ABC):
             msg = f"{type(self).__name__} must be generator function"
             raise RuntimeError(msg)
 
-        self._creator: typing.Final = creator
-        self._args: typing.Final = args
-        self._kwargs: typing.Final = kwargs
+        self._creator = creator
+        self._args = args
+        self._kwargs = kwargs
         self._override = None
 
     def _is_creator_async(self, _: typing.Callable[P, typing.Iterator[T] | typing.AsyncIterator[T]]) -> typing.TypeGuard[typing.Callable[P, typing.AsyncIterator[T]]]:
