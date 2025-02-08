@@ -31,8 +31,8 @@ class DIContainer(BaseContainer):
     async_context_resource = providers.ContextResource(create_async_context_resource)
     dynamic_context_resource = providers.Selector(
         lambda: fetch_context_item("resource_type") or "sync",
-        sync=sync_context_resource,
-        async_=async_context_resource,
+        sync=sync_container_context(sync_context_resource),
+        async_=sync_container_context(async_context_resource),
     )
 
 
@@ -157,7 +157,7 @@ async def test_resource_context_early_teardown() -> None:
 
 
 async def test_teardown_sync_container_context_with_async_resource() -> None:
-    resource_context = ResourceContext(is_async=True)
+    resource_context: ResourceContext[typing.Any] = ResourceContext(is_async=True)
     resource_context.context_stack = AsyncExitStack()
     with pytest.raises(RuntimeError, match="Cannot tear down async context in sync mode"):
         resource_context.sync_tear_down()
