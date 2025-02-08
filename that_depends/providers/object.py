@@ -3,10 +3,11 @@ import asyncio
 
 from that_depends.providers.base import AbstractProvider
 
+T_co = typing.TypeVar('T_co', covariant=True)
 P = typing.ParamSpec('P')
 
 class EnhancedObject(AbstractProvider[T_co]):
-    __slots__ = '_factory', '_args', '_kwargs', '_override', '_instance', '_resolving_lock'
+    __slots__ = ('_factory', '_args', '_kwargs', '_override', '_instance', '_resolving_lock')
 
     def __init__(self, factory: typing.Callable[P, T_co], *args: P.args, **kwargs: P.kwargs) -> None:
         super().__init__()
@@ -26,10 +27,7 @@ class EnhancedObject(AbstractProvider[T_co]):
 
         async with self._resolving_lock:
             if self._instance is None:
-                self._instance = self._factory(
-                    *[await x.async_resolve() if isinstance(x, AbstractProvider) else x for x in self._args],
-                    **{k: await v.async_resolve() if isinstance(v, AbstractProvider) else v for k, v in self._kwargs.items()}
-                )
+                self._instance = self._factory(*[await x.async_resolve() if isinstance(x, AbstractProvider) else x for x in self._args], **{k: await v.async_resolve() if isinstance(v, AbstractProvider) else v for k, v in self._kwargs.items()})
             return self._instance
 
     def sync_resolve(self) -> T_co:
@@ -39,19 +37,12 @@ class EnhancedObject(AbstractProvider[T_co]):
         if self._instance is not None:
             return self._instance
 
-        self._instance = self._factory(
-            *[x.sync_resolve() if isinstance(x, AbstractProvider) else x for x in self._args],
-            **{k: v.sync_resolve() if isinstance(v, AbstractProvider) else v for k, v in self._kwargs.items()}
-        )
+        self._instance = self._factory(*[x.sync_resolve() if isinstance(x, AbstractProvider) else x for x in self._args], **{k: v.sync_resolve() if isinstance(v, AbstractProvider) else v for k, v in self._kwargs.items()})
         return self._instance
-
-    async def tear_down(self) -> None:
-        if self._instance is not None:
-            self._instance = None
 
 
 class CachedObject(AbstractProvider[T_co]):
-    __slots__ = '_factory', '_args', '_kwargs', '_instance', '_resolving_lock'
+    __slots__ = ('_factory', '_args', '_kwargs', '_instance', '_resolving_lock')
 
     def __init__(self, factory: typing.Callable[P, T_co], *args: P.args, **kwargs: P.kwargs) -> None:
         super().__init__()
@@ -67,20 +58,14 @@ class CachedObject(AbstractProvider[T_co]):
 
         async with self._resolving_lock:
             if self._instance is None:
-                self._instance = self._factory(
-                    *[await x.async_resolve() if isinstance(x, AbstractProvider) else x for x in self._args],
-                    **{k: await v.async_resolve() if isinstance(v, AbstractProvider) else v for k, v in self._kwargs.items()}
-                )
+                self._instance = self._factory(*[await x.async_resolve() if isinstance(x, AbstractProvider) else x for x in self._args], **{k: await v.async_resolve() if isinstance(v, AbstractProvider) else v for k, v in self._kwargs.items()})
             return self._instance
 
     def sync_resolve(self) -> T_co:
         if self._instance is not None:
             return self._instance
 
-        self._instance = self._factory(
-            *[x.sync_resolve() if isinstance(x, AbstractProvider) else x for x in self._args],
-            **{k: v.sync_resolve() if isinstance(v, AbstractProvider) else v for k, v in self._kwargs.items()}
-        )
+        self._instance = self._factory(*[x.sync_resolve() if isinstance(x, AbstractProvider) else x for x in self._args], **{k: v.sync_resolve() if isinstance(v, AbstractProvider) else v for k, v in self._kwargs.items()})
         return self._instance
 
     def tear_down(self) -> None:
