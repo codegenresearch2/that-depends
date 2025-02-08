@@ -20,17 +20,20 @@ class Singleton(AbstractProvider[T_co]):
         self._resolving_lock: typing.Final = asyncio.Lock()
 
     async def async_resolve(self) -> T_co:
+        # Check for override
         if self._override is not None:
             return typing.cast(T_co, self._override)
 
+        # Return cached instance if available
         if self._instance is not None:
             return self._instance
 
+        # Lock to prevent concurrent resolution
         async with self._resolving_lock:
             if self._instance is None:
                 self._instance = self._factory(
-                    *[await x.async_resolve() if isinstance(x, AbstractProvider) else x for x in self._args],
-                    **{k: await v.async_resolve() if isinstance(v, AbstractProvider) else v for k, v in self._kwargs.items()}
+                    *[await x.async_resolve() if isinstance(x, AbstractProvider) else x for x in self._args],  # type: ignore[arg-type]
+                    **{k: await v.async_resolve() if isinstance(v, AbstractProvider) else v for k, v in self._kwargs.items()}  # type: ignore[arg-type]
                 )
             return self._instance
 
@@ -40,8 +43,8 @@ class Singleton(AbstractProvider[T_co]):
 
         if self._instance is None:
             self._instance = self._factory(
-                *[x.sync_resolve() if isinstance(x, AbstractProvider) else x for x in self._args],
-                **{k: v.sync_resolve() if isinstance(v, AbstractProvider) else v for k, v in self._kwargs.items()}
+                *[x.sync_resolve() if isinstance(x, AbstractProvider) else x for x in self._args],  # type: ignore[arg-type]
+                **{k: v.sync_resolve() if isinstance(v, AbstractProvider) else v for k, v in self._kwargs.items()}  # type: ignore[arg-type]
             )
         return self._instance
 
