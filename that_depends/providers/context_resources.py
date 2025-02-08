@@ -9,7 +9,7 @@ from types import TracebackType
 
 from that_depends.providers.base import AbstractResource, ResourceContext
 
-logger = logging.getLogger(__name__)
+logger: typing.Final = logging.getLogger(__name__)
 T = typing.TypeVar('T')
 P = typing.ParamSpec('P')
 _CONTAINER_CONTEXT: typing.Final[ContextVar[dict[str, typing.Any]]] = ContextVar('CONTAINER_CONTEXT')
@@ -42,7 +42,7 @@ def async_container_context(initial_context: ContextType | None = None) -> typin
     context[_ASYNC_CONTEXT_KEY] = True
     token: Token[ContextType] = _CONTAINER_CONTEXT.set(context)
     try:
-        for context_item in _CONTAINER_CONTEXT.get().values():
+        for context_item in reversed(_CONTAINER_CONTEXT.get().values()):
             if isinstance(context_item, ResourceContext):
                 if context_item.is_context_stack_async(context_item.context_stack):
                     await context_item.tear_down()
@@ -54,7 +54,7 @@ def async_container_context(initial_context: ContextType | None = None) -> typin
 
 class DIContextMiddleware:
     def __init__(self, app: ASGIApp) -> None:
-        self.app = app
+        self.app: typing.Final = app
 
     @async_container_context()
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
