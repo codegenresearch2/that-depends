@@ -4,6 +4,7 @@ import contextlib
 import inspect
 import typing
 from contextlib import contextmanager
+from operator import attrgetter
 
 
 T_co = typing.TypeVar("T_co", covariant=True)
@@ -45,8 +46,12 @@ class AbstractProvider(typing.Generic[T_co], abc.ABC):
 
     @property
     def cast(self) -> T_co:
-        """Returns self, but cast to the type of the provided value."
+        """Returns self, but cast to the type of the provided value."""
         return typing.cast(T_co, self)
+
+    def __getattr__(self, name: str) -> typing.Any:
+        """Allows for dynamic attribute access."""
+        raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
 
 
 class ResourceContext(typing.Generic[T_co]):
@@ -98,11 +103,7 @@ class ResourceContext(typing.Generic[T_co]):
 
 
 class AbstractResource(AbstractProvider[T_co], abc.ABC):
-    def __init__(self,
-        creator: typing.Callable[P, typing.Iterator[T_co] | typing.AsyncIterator[T_co]],
-        *args: P.args,
-        **kwargs: P.kwargs,
-    ) -> None:
+    def __init__(self, creator: typing.Callable[P, typing.Iterator[T_co] | typing.AsyncIterator[T_co]], *args: P.args, **kwargs: P.kwargs) -> None:
         super().__init__()
         if inspect.isasyncgenfunction(creator):
             self._is_async = True
@@ -117,14 +118,10 @@ class AbstractResource(AbstractProvider[T_co], abc.ABC):
         self._kwargs: typing.Final = kwargs
         self._override = None
 
-    def _is_creator_async(
-        self, _: typing.Callable[P, typing.Iterator[T_co] | typing.AsyncIterator[T_co]]
-    ) -> typing.TypeGuard[typing.Callable[P, typing.AsyncIterator[T_co]]]:
+    def _is_creator_async(self, _: typing.Callable[P, typing.Iterator[T_co] | typing.AsyncIterator[T_co]]) -> typing.TypeGuard[typing.Callable[P, typing.AsyncIterator[T_co]]]:
         return self._is_async
 
-    def _is_creator_sync(
-        self, _: typing.Callable[P, typing.Iterator[T_co] | typing.AsyncIterator[T_co]]
-    ) -> typing.TypeGuard[typing.Callable[P, typing.Iterator[T_co]]]:
+    def _is_creator_sync(self, _: typing.Callable[P, typing.Iterator[T_co] | typing.AsyncIterator[T_co]]) -> typing.TypeGuard[typing.Callable[P, typing.Iterator[T_co]]]:
         return not self._is_async
 
     @abc.abstractmethod
@@ -190,7 +187,10 @@ class AbstractResource(AbstractProvider[T_co], abc.ABC):
             context.instance = context.context_stack.enter_context(
                 contextlib.contextmanager(self._creator)(
                     *[x.sync_resolve() if isinstance(x, AbstractProvider) else x for x in self._args],
-                    **{k: v.sync_resolve() if isinstance(v, AbstractProvider) else v for k, v in self._kwargs.items()},
+                    **{
+                        k: v.sync_resolve() if isinstance(v, AbstractProvider) else v
+                        for k, v in self._kwargs.items()
+                    },
                 ),
             )
         return typing.cast(T_co, context.instance)
