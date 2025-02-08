@@ -78,16 +78,16 @@ class container_context(AbstractAsyncContextManager[ContextType], AbstractContex
         if inspect.iscoroutinefunction(func):
 
             @wraps(func)
-            async def _async_inner(*args: P.args, **kwds: P.kwargs) -> T:
+            async def _async_inner(*args: P.args, **kwargs: P.kwargs) -> T:
                 async with self:
-                    return await func(*args, **kwds)  # type: ignore[no-any-return]
+                    return await func(*args, **kwargs)  # type: ignore[no-any-return]
 
             return typing.cast(typing.Callable[P, T], _async_inner)
 
         @wraps(func)
-        def _sync_inner(*args: P.args, **kwds: P.kwargs) -> T:
+        def _sync_inner(*args: P.args, **kwargs: P.kwargs) -> T:
             with self:
-                return func(*args, **kwds)
+                return func(*args, **kwargs)
 
         return _sync_inner
 
@@ -110,7 +110,7 @@ def _get_container_context() -> dict[str, typing.Any]:
 
 
 def _is_container_context_async() -> bool:
-    """Check if the current container context is async."""
+    """Check if the current container context is async."
     return typing.cast(bool, _get_container_context().get(_ASYNC_CONTEXT_KEY, False))
 
 
