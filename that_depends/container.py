@@ -27,7 +27,7 @@ class BaseContainer:
         """Connect containers.
 
         When `init_resources` and `tear_down` is called,
-same method of connected containers will also be called."""
+same method of connected containers will also be called."
         if not hasattr(cls, "containers"):
             cls.containers = []
 
