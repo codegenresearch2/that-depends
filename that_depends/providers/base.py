@@ -21,7 +21,7 @@ class AbstractProvider(typing.Generic[T_co], abc.ABC):
 
     def __getattr__(self, attr_name: str) -> typing.Any:  # noqa: ANN401
         if attr_name.startswith('_'):
-            msg = f'{type(self).__name__} object has no attribute {attr_name}':
+            msg = f'{type(self).__name__} object has no attribute {attr_name}'  # Use single quotes for error message
             raise AttributeError(msg)
         return AttrGetter(provider=self, attr_name=attr_name)
 
@@ -52,7 +52,7 @@ class AbstractProvider(typing.Generic[T_co], abc.ABC):
 
     @property
     def cast(self) -> T_co:
-        """Returns self, but cast to the type of the provided value."
+        """Returns self, but cast to the type of the provided value."""
         return typing.cast(T_co, self)
 
 
@@ -105,11 +105,7 @@ class ResourceContext(typing.Generic[T_co]):
 
 
 class AbstractResource(AbstractProvider[T_co], abc.ABC):
-    def __init__(self,
-        creator: typing.Callable[P, typing.Iterator[T_co] | typing.AsyncIterator[T_co]],
-        *args: P.args,
-        **kwargs: P.kwargs,
-    ) -> None:
+    def __init__(self, creator: typing.Callable[P, typing.Iterator[T_co] | typing.AsyncIterator[T_co]], *args: P.args, **kwargs: P.kwargs,) -> None:
         super().__init__()
         if inspect.isasyncgenfunction(creator):
             self._is_async = True
@@ -123,14 +119,10 @@ class AbstractResource(AbstractProvider[T_co], abc.ABC):
         self._args: typing.Final = args
         self._kwargs: typing.Final = kwargs
 
-    def _is_creator_async(self,
-        _: typing.Callable[P, typing.Iterator[T_co] | typing.AsyncIterator[T_co]])
-    -> typing.TypeGuard[typing.Callable[P, typing.AsyncIterator[T_co]]]:
+    def _is_creator_async(self, _: typing.Callable[P, typing.Iterator[T_co] | typing.AsyncIterator[T_co]]) -> typing.TypeGuard[typing.Callable[P, typing.AsyncIterator[T_co]]]:
         return self._is_async
 
-    def _is_creator_sync(self,
-        _: typing.Callable[P, typing.Iterator[T_co] | typing.AsyncIterator[T_co]])
-    -> typing.TypeGuard[typing.Callable[P, typing.Iterator[T_co]]]:
+    def _is_creator_sync(self, _: typing.Callable[P, typing.Iterator[T_co] | typing.AsyncIterator[T_co]]) -> typing.TypeGuard[typing.Callable[P, typing.Iterator[T_co]]]:
         return not self._is_async
 
     @abc.abstractmethod
@@ -226,7 +218,7 @@ class AttrGetter(AbstractProvider[T_co], abc.ABC):
 
     def __getattr__(self, attr: str) -> 'AttrGetter[T_co]':
         if attr.startswith('_'):
-            msg = f'{type(self).__name__} object has no attribute {attr}':
+            msg = f'{type(self).__name__} object has no attribute {attr}'  # Use single quotes for error message
             raise AttributeError(msg)
         self._attrs.append(attr)
         return self
