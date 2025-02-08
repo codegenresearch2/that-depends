@@ -1,5 +1,4 @@
 import typing
-import inspect
 import logging
 import uuid
 import warnings
@@ -10,9 +9,10 @@ from types import TracebackType
 
 from that_depends.providers.base import AbstractResource, ResourceContext
 
+
 logger: typing.Final = logging.getLogger(__name__)
 T_co = typing.TypeVar('T_co', covariant=True)
-P_co = typing.ParamSpec('P_co', covariant=True)
+P = typing.ParamSpec('P', covariant=True)
 _CONTAINER_CONTEXT: typing.Final[ContextVar[dict[str, typing.Any]]] = ContextVar('CONTAINER_CONTEXT')
 AppType = typing.TypeVar('AppType')
 Scope = typing.MutableMapping[str, typing.Any]
@@ -82,18 +82,18 @@ class container_context(
         finally:
             _CONTAINER_CONTEXT.reset(self._context_token)
 
-    def __call__(self, func: typing.Callable[P_co, T_co]) -> typing.Callable[P_co, T_co]:
+    def __call__(self, func: typing.Callable[P, T_co]) -> typing.Callable[P, T_co]:
         if inspect.iscoroutinefunction(func):
 
             @wraps(func)
-            async def _async_inner(*args: P_co.args, **kwargs: P_co.kwargs) -> T_co:
+            async def _async_inner(*args: P.args, **kwargs: P.kwargs) -> T_co:
                 async with container_context(self._initial_context):
                     return await func(*args, **kwargs)  # type: ignore[no-any-return]
 
-            return typing.cast(typing.Callable[P_co, T_co], _async_inner)
+            return typing.cast(typing.Callable[P, T_co], _async_inner)
 
         @wraps(func)
-        def _sync_inner(*args: P_co.args, **kwargs: P_co.kwargs) -> T_co:
+        def _sync_inner(*args: P.args, **kwargs: P.kwargs) -> T_co:
             with container_context(self._initial_context):
                 return func(*args, **kwargs)
 
@@ -133,7 +133,7 @@ def fetch_context_item(key: str, default: typing.Any = None) -> typing.Any:  # n
 class ContextResource(AbstractResource[T_co]):
     __slots__ = ('_is_async', '_creator', '_args', '_kwargs', '_override', '_internal_name')
 
-    def __init__(self, creator: typing.Callable[P_co, typing.Iterator[T_co] | typing.AsyncIterator[T_co]], *args: P_co.args, **kwargs: P_co.kwargs) -> None:
+    def __init__(self, creator: typing.Callable[P, typing.Iterator[T_co] | typing.AsyncIterator[T_co]], *args: P.args, **kwargs: P.kwargs) -> None:
         super().__init__(creator, *args, **kwargs)
         self._internal_name: typing.Final = f'{creator.__name__}-{uuid.uuid4()}'
 
@@ -148,6 +148,6 @@ class ContextResource(AbstractResource[T_co]):
 
 
 class AsyncContextResource(ContextResource[T_co]):
-    def __init__(self, creator: typing.Callable[P_co, typing.AsyncIterator[T_co]], *args: P_co.args, **kwargs: P_co.kwargs) -> None:
+    def __init__(self, creator: typing.Callable[P, typing.AsyncIterator[T_co]], *args: P.args, **kwargs: P.kwargs) -> None:
         warnings.warn('AsyncContextResource is deprecated, use ContextResource instead', RuntimeWarning, stacklevel=1)
         super().__init__(creator, *args, **kwargs)
