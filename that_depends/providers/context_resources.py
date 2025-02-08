@@ -25,7 +25,13 @@ ContextType = dict[str, typing.Any]
 
 
 class container_context(AbstractAsyncContextManager[ContextType], AbstractContextManager[ContextType]):  # noqa: N801
-    """Manage the context of ContextResources."
+    """Manage the context of ContextResources.
+
+    Can be entered using ``async with container_context()`` or with ``with container_context()``
+    as a async-context-manager or context-manager respectively.
+    When used as an async-context-manager, it will allow setup & teardown of both sync and async resources.
+    When used as an sync-context-manager, it will only allow setup & teardown of sync resources.
+    """
 
     def __init__(self, initial_context: ContextType | None = None) -> None:
         self._initial_context: ContextType = initial_context or {}
@@ -104,7 +110,7 @@ def _get_container_context() -> dict[str, typing.Any]:
 
 
 def _is_container_context_async() -> bool:
-    """Check if the current container context is async."
+    """Check if the current container context is async."""
     return typing.cast(bool, _get_container_context().get(_ASYNC_CONTEXT_KEY, False))
 
 
