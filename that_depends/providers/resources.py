@@ -31,5 +31,5 @@ class Resource(AbstractResource[T_co]):
 
 class AsyncResource(Resource[T_co]):
     def __init__(self, creator: typing.Callable[P, typing.AsyncIterator[T_co]], *args: P.args, **kwargs: P.kwargs) -> None:
-        warnings.warn('AsyncResource is deprecated, use Resource instead', RuntimeWarning, stacklevel=1)
+        warnings.warn("AsyncResource is deprecated, use Resource instead", RuntimeWarning, stacklevel=1)
         super().__init__(creator, *args, **kwargs)
