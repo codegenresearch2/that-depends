@@ -59,14 +59,16 @@ class ResourceContext(typing.Generic[T_co]):
             msg = "Cannot use async resource in sync mode."
             raise RuntimeError(msg)
 
-    def is_context_stack_sync(self,
-                               _: contextlib.AsyncExitStack | contextlib.ExitStack | None
-                               ) -> typing.TypeGuard[contextlib.ExitStack]:
+    @staticmethod
+    def is_context_stack_sync(_
+                                _: contextlib.AsyncExitStack | contextlib.ExitStack | None
+                                ) -> typing.TypeGuard[contextlib.ExitStack]:
         return isinstance(_, contextlib.ExitStack)
 
-    def is_context_stack_async(self,
-                                _: contextlib.AsyncExitStack | contextlib.ExitStack | None
-                                ) -> typing.TypeGuard[contextlib.AsyncExitStack]:
+    @staticmethod
+    def is_context_stack_async(_
+                                 _: contextlib.AsyncExitStack | contextlib.ExitStack | None
+                                 ) -> typing.TypeGuard[contextlib.AsyncExitStack]:
         return isinstance(_, contextlib.AsyncExitStack)
 
     async def tear_down(self) -> None:
@@ -110,15 +112,17 @@ class AbstractResource(AbstractProvider[T], abc.ABC):
         self._kwargs: typing.Final = kwargs
         self._override = None
 
-    def _is_creator_async(self,
+    @staticmethod
+    def _is_creator_async(_
                            _: typing.Callable[P, typing.Iterator[T] | typing.AsyncIterator[T]]
                            ) -> typing.TypeGuard[typing.Callable[P, typing.AsyncIterator[T]]]:
-        return self._is_async
+        return isinstance(_, typing.Callable[P, typing.AsyncIterator[T]])
 
-    def _is_creator_sync(self,
+    @staticmethod
+    def _is_creator_sync(_
                           _: typing.Callable[P, typing.Iterator[T] | typing.AsyncIterator[T]]
                           ) -> typing.TypeGuard[typing.Callable[P, typing.Iterator[T]]]:
-        return not self._is_async
+        return not isinstance(_, typing.Callable[P, typing.AsyncIterator[T]])
 
     @abc.abstractmethod
     def _fetch_context(self) -> ResourceContext[T]: ...
@@ -182,19 +186,10 @@ class AbstractResource(AbstractProvider[T], abc.ABC):
             context.instance = context.context_stack.enter_context(
                 contextlib.contextmanager(self._creator)(
                     *[x.sync_resolve() if isinstance(x, AbstractProvider) else x for x in self._args],
-                    **{k: v.sync_resolve() if isinstance(v, AbstractProvider) else v for k, v in self._kwargs.items()},
+                    **{
+                        k: v.sync_resolve() if isinstance(v, AbstractProvider) else v
+                        for k, v in self._kwargs.items()
+                    },
                 ),
             )
         return typing.cast(T, context.instance)
-
-
-class AbstractFactory(AbstractProvider[T], abc.ABC):
-    """Abstract Factory Class."""
-
-    @property
-    def provider(self) -> typing.Callable[[], typing.Coroutine[typing.Any, typing.Any, T]]:
-        return self.async_resolve
-
-    @property
-    def sync_provider(self) -> typing.Callable[[], T]:
-        return self.sync_resolve
