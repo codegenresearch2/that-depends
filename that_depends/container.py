@@ -15,8 +15,8 @@ P = typing.ParamSpec("P")
 
 
 class BaseContainer:
-    providers: dict[str, AbstractProvider[typing.Any]] = {}
-    containers: list[type["BaseContainer"]] = []
+    _providers: dict[str, AbstractProvider[typing.Any]] = {}
+    _containers: list[type["BaseContainer"]] = []
 
     def __new__(cls, *_: typing.Any, **__: typing.Any) -> "typing_extensions.Self":  # noqa: ANN401
         msg = f"{cls.__name__} should not be instantiated"
@@ -29,17 +29,17 @@ class BaseContainer:
         When `init_resources` and `tear_down` is called,
         same method of connected containers will also be called.
         """
-        cls.containers.extend(containers)
+        cls._containers.extend(containers)
 
     @classmethod
     def get_providers(cls) -> dict[str, AbstractProvider[typing.Any]]:
-        if not hasattr(cls, "providers"):
-            cls.providers = {k: v for k, v in cls.__dict__.items() if isinstance(v, AbstractProvider)}
-        return cls.providers
+        if not hasattr(cls, "_providers"):
+            cls._providers = {k: v for k, v in cls.__dict__.items() if isinstance(v, AbstractProvider)}
+        return cls._providers
 
     @classmethod
     def get_containers(cls) -> list[type["BaseContainer"]]:
-        return cls.containers
+        return cls._containers
 
     @classmethod
     async def init_resources(cls) -> None:
