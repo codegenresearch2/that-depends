@@ -67,10 +67,10 @@ class ResourceContext(typing.Generic[T_co]):
         context_stack: contextlib.AsyncExitStack | contextlib.ExitStack | None = None,
         instance: T_co | None = None,
     ) -> None:
-        self.instance: typing.Final = instance
-        self.resolving_lock: typing.Final = asyncio.Lock()
-        self.context_stack: typing.Final = context_stack
-        self.is_async: typing.Final = is_async
+        self.instance = instance
+        self.resolving_lock = asyncio.Lock()
+        self.context_stack = context_stack
+        self.is_async = is_async
 
     @staticmethod
     def is_context_stack_sync(
@@ -88,30 +88,22 @@ class ResourceContext(typing.Generic[T_co]):
         if self.context_stack is None:
             return
 
-        if self.is_context_stack_async(self.context_stack):
+        if self.is_async:
             await self.context_stack.aclose()
-        elif self.is_context_stack_sync(self.context_stack):
-            self.context_stack.close()
         else:
-            msg = "Unknown context stack type"
-            raise RuntimeError(msg)
+            self.context_stack.close()
         self.context_stack = None
         self.instance = None
 
     def sync_tear_down(self) -> None:
         if self.context_stack is None:
             return
-
-        if self.is_context_stack_sync(self.context_stack):
-            self.context_stack.close()
-            self.context_stack = None
-            self.instance = None
-        elif self.is_context_stack_async(self.context_stack):
+        if self.is_async:
             msg = "Cannot tear down async context in sync mode"
             raise RuntimeError(msg)
-        else:
-            msg = "Unknown context stack type"
-            raise RuntimeError(msg)
+        self.context_stack.close()
+        self.context_stack = None
+        self.instance = None
 
 
 class AbstractResource(AbstractProvider[T], abc.ABC):
@@ -129,9 +121,9 @@ class AbstractResource(AbstractProvider[T], abc.ABC):
             msg = f"{type(self).__name__} must be generator function"
             raise RuntimeError(msg)
 
-        self._creator: typing.Final = creator
-        self._args: typing.Final = args
-        self._kwargs: typing.Final = kwargs
+        self._creator = creator
+        self._args = args
+        self._kwargs = kwargs
         self._override = None
 
     def _is_creator_async(
@@ -160,7 +152,6 @@ class AbstractResource(AbstractProvider[T], abc.ABC):
             msg = "AsyncResource cannot be resolved in an sync context."
             raise RuntimeError(msg)
 
-        # lock to prevent race condition while resolving
         async with context.resolving_lock:
             if context.instance is None:
                 if self._is_creator_async(self._creator):
