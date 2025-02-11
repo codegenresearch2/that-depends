@@ -1,7 +1,10 @@
 import pytest
-import datetime
+import logging
+import uuid
+import typing
+from contextlib import AsyncExitStack
 from that_depends import BaseContainer, fetch_context_item, providers
-from that_depends.providers import sync_container_context, container_context
+from that_depends.providers import container_context, sync_container_context
 from that_depends.providers.base import ResourceContext
 
 logger = logging.getLogger(__name__)
@@ -32,13 +35,9 @@ async def _clear_di_container() -> typing.AsyncIterator[None]:
     finally:
         await DIContainer.tear_down()
 
-@pytest.fixture
-def sync_context_resource() -> providers.ContextResource[str]:
-    return DIContainer.sync_context_resource
-
-@pytest.fixture
-def async_context_resource() -> providers.ContextResource[str]:
-    return DIContainer.async_context_resource
+@pytest.fixture(params=[DIContainer.sync_context_resource, DIContainer.async_context_resource])
+def context_resource(request: pytest.FixtureRequest) -> providers.ContextResource[str]:
+    return typing.cast(providers.ContextResource[str], request.param)
 
 @sync_container_context()
 def test_sync_context_resource(sync_context_resource: providers.ContextResource[str]) -> None:
