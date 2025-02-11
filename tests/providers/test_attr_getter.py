@@ -1,6 +1,28 @@
+import random
+import typing
+from dataclasses import dataclass, field
+
 import pytest
 from that_depends import providers
 from that_depends.providers.attr_getter import _get_value_from_object_by_dotted_path
+
+@dataclass
+class Nested2:
+    some_const: int = 144
+
+@dataclass
+class Nested1:
+    nested2_attr: Nested2 = field(default_factory=Nested2)
+
+@dataclass
+class Settings:
+    some_str_value: str = "some_string_value"
+    some_int_value: int = 3453621
+    nested1_attr: Nested1 = field(default_factory=Nested1)
+
+@dataclass
+class NestingTestDTO:
+    pass
 
 @pytest.fixture
 def some_settings_provider() -> providers.Singleton[Settings]:
