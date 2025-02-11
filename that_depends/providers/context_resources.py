@@ -61,7 +61,10 @@ class container_context(  # noqa: N801
         try:
             for context_item in reversed(_CONTAINER_CONTEXT.get().values()):
                 if isinstance(context_item, ResourceContext):
-                    context_item.sync_tear_down()
+                    if context_item.is_async:
+                        context_item.tear_down()
+                    else:
+                        context_item.sync_tear_down()
         finally:
             _CONTAINER_CONTEXT.reset(self._context_token)
 
@@ -74,7 +77,7 @@ class container_context(  # noqa: N801
         try:
             for context_item in reversed(_CONTAINER_CONTEXT.get().values()):
                 if isinstance(context_item, ResourceContext):
-                    if context_item.is_context_stack_async(context_item.context_stack):
+                    if context_item.is_async:
                         await context_item.tear_down()
         finally:
             _CONTAINER_CONTEXT.reset(self._context_token)
