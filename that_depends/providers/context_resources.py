@@ -26,12 +26,12 @@ _ASYNC_CONTEXT_KEY: typing.Final[str] = "__ASYNC_CONTEXT__"
 ContextType = dict[str, typing.Any]
 
 
-class container_context(  # noqa: N801
+class ContainerContext(  # noqa: N801
     AbstractAsyncContextManager[ContextType], AbstractContextManager[ContextType]
 ):
     """Manage the context of ContextResources.
 
-    Can be entered using ``async with container_context()`` or with ``with container_context()``
+    Can be entered using ``async with ContainerContext()`` or with ``with ContainerContext()``
     as a async-context-manager or context-manager respectively.
     When used as an async-context-manager, it will allow setup & teardown of both sync and async resources.
     When used as an sync-context-manager, it will only allow setup & teardown of sync resources.
@@ -104,7 +104,7 @@ class DIContextMiddleware:
     def __init__(self, app: ASGIApp) -> None:
         self.app: typing.Final = app
 
-    @container_context()
+    @ContainerContext()
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         return await self.app(scope, receive, send)
 
@@ -113,7 +113,7 @@ def _get_container_context() -> dict[str, typing.Any]:
     try:
         return _CONTAINER_CONTEXT.get()
     except LookupError as exc:
-        msg = "Context is not set. Use container_context"
+        msg = "Context is not set. Use ContainerContext"
         raise RuntimeError(msg) from exc
 
 
