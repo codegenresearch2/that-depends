@@ -16,20 +16,20 @@ class Selector(AbstractProvider[T_co]):
         self._override = None
 
     async def async_resolve(self) -> T_co:
-        if self._override is not None:
+        if self._override:
             return typing.cast(T_co, self._override)
 
-        selected_key = self._selector()
+        selected_key: typing.Final = self._selector()
         if selected_key not in self._providers:
             msg = f"No provider matches {selected_key}"
             raise RuntimeError(msg)
         return await self._providers[selected_key].async_resolve()
 
     def sync_resolve(self) -> T_co:
-        if self._override is not None:
+        if self._override:
             return typing.cast(T_co, self._override)
 
-        selected_key = self._selector()
+        selected_key: typing.Final = self._selector()
         if selected_key not in self._providers:
             msg = f"No provider matches {selected_key}"
             raise RuntimeError(msg)
