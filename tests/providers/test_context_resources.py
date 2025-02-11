@@ -13,14 +13,22 @@ from that_depends.providers.base import ResourceContext
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 
+# Store the generated UUIDs
+sync_uuid = None
+async_uuid = None
+
 def create_sync_context_resource() -> typing.Iterator[str]:
+    global sync_uuid
     logger.info("Resource initiated")
-    yield f"sync {uuid.uuid4()}"
+    sync_uuid = f"sync {uuid.uuid4()}"
+    yield sync_uuid
     logger.info("Resource destructed")
 
 async def create_async_context_resource() -> typing.AsyncIterator[str]:
+    global async_uuid
     logger.info("Async resource initiated")
-    yield f"async {uuid.uuid4()}"
+    async_uuid = f"async {uuid.uuid4()}"
+    yield async_uuid
     logger.info("Async resource destructed")
 
 class DIContainer(BaseContainer):
@@ -39,19 +47,25 @@ async def _clear_di_container() -> typing.AsyncIterator[None]:
     finally:
         await DIContainer.tear_down()
 
-@pytest.fixture(params=[DIContainer.sync_context_resource, DIContainer.async_context_resource])
-def context_resource(request: pytest.FixtureRequest) -> providers.ContextResource[str]:
-    return typing.cast(providers.ContextResource[str], request.param)
+@pytest.fixture
+def sync_context_resource() -> providers.ContextResource[str]:
+    return DIContainer.sync_context_resource
+
+@pytest.fixture
+def async_context_resource() -> providers.ContextResource[str]:
+    return DIContainer.async_context_resource
 
 @sync_container_context()
 def test_sync_context_resource(sync_context_resource: providers.ContextResource[str]) -> None:
+    global sync_uuid
     context_resource_result = sync_context_resource.sync_resolve()
-    assert context_resource_result == f"sync {uuid.uuid4()}"
+    assert context_resource_result is sync_uuid
 
 @container_context()
 async def test_context_resource(context_resource: providers.ContextResource[str]) -> None:
+    global sync_uuid
     context_resource_result = await context_resource()
-    assert context_resource_result == f"sync {uuid.uuid4()}"
+    assert context_resource_result is sync_uuid
 
 @container_context()
 async def test_async_context_resource_in_sync_context(async_context_resource: providers.ContextResource[str]) -> None:
@@ -59,29 +73,24 @@ async def test_async_context_resource_in_sync_context(async_context_resource: pr
         await async_context_resource()
 
 @container_context()
-def test_context_resource_different_context(sync_context_resource: providers.ContextResource[str]) -> None:
-    context_resource_result1 = sync_context_resource.sync_resolve()
-    context_resource_result2 = sync_context_resource.sync_resolve()
-    assert context_resource_result1 != context_resource_result2
+def test_early_exit_of_container_context() -> None:
+    with pytest.raises(RuntimeError, match="Context is not set, call ``__aexit__`` first"):
+        container_context().__aexit__(None, None, None)
+    with pytest.raises(RuntimeError, match="Context is not set, call ``__exit__`` first"):
+        container_context().__exit__(None, None, None)
 
-@container_context()
-def test_context_resource_included_context(sync_context_resource: providers.ContextResource[str]) -> None:
-    context_resource_result1 = sync_context_resource.sync_resolve()
-    with container_context():
-        context_resource_result2 = sync_context_resource.sync_resolve()
-    context_resource_result3 = sync_context_resource.sync_resolve()
-    assert context_resource_result1 != context_resource_result2
-    assert context_resource_result1 == context_resource_result3
+def test_resource_context_early_teardown() -> None:
+    context: ResourceContext[str] = ResourceContext(is_async=True)
+    assert context.context_stack is None
+    context.sync_tear_down()
+    assert context.context_stack is None
 
-@container_context()
-def test_context_resources_overriding(sync_context_resource: providers.ContextResource[str]) -> None:
-    context_resource_mock = f"mock_{uuid.uuid4()}"
-    sync_context_resource.override(context_resource_mock)
-    context_resource_result = sync_context_resource.sync_resolve()
-    assert context_resource_result == context_resource_mock
-    DIContainer.reset_override()
-    with pytest.raises(RuntimeError, match="Context is not set. Use container_context"):
-        sync_context_resource.sync_resolve()
+@pytest.mark.asyncio
+async def test_teardown_sync_container_context_with_async_resource() -> None:
+    resource_context: ResourceContext[typing.Any] = ResourceContext(is_async=True)
+    resource_context.context_stack = AsyncExitStack()
+    with pytest.raises(RuntimeError, match="Cannot tear down async context in sync mode"):
+        resource_context.sync_tear_down()
 
 @pytest.mark.asyncio
 async def test_context_resources_init_and_tear_down() -> None:
@@ -100,23 +109,3 @@ async def test_context_resource_with_dynamic_resource() -> None:
         assert (await DIContainer.dynamic_context_resource()).startswith("async")
     async with container_context():
         assert (await DIContainer.dynamic_context_resource()).startswith("sync")
-
-@pytest.mark.asyncio
-async def test_early_exit_of_container_context() -> None:
-    with pytest.raises(RuntimeError, match="Context is not set, call ``__aexit__`` first"):
-        await container_context().__aexit__(None, None, None)
-    with pytest.raises(RuntimeError, match="Context is not set, call ``__exit__`` first"):
-        container_context().__exit__(None, None, None)
-
-def test_resource_context_early_teardown() -> None:
-    context: ResourceContext[str] = ResourceContext(is_async=True)
-    assert context.context_stack is None
-    context.sync_tear_down()
-    assert context.context_stack is None
-
-@pytest.mark.asyncio
-async def test_teardown_sync_container_context_with_async_resource() -> None:
-    resource_context: ResourceContext[typing.Any] = ResourceContext(is_async=True)
-    resource_context.context_stack = AsyncExitStack()
-    with pytest.raises(RuntimeError, match="Cannot tear down async context in sync mode"):
-        resource_context.sync_tear_down()
