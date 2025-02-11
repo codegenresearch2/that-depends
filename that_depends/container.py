@@ -15,8 +15,8 @@ P = typing.ParamSpec("P")
 
 
 class BaseContainer:
-    providers: dict[str, AbstractProvider[typing.Any]]
-    containers: list[type["BaseContainer"]]
+    providers: dict[str, AbstractProvider[typing.Any]] = {}
+    containers: list[type["BaseContainer"]] = []
 
     def __new__(cls, *_: typing.Any, **__: typing.Any) -> "typing_extensions.Self":  # noqa: ANN401
         msg = f"{cls.__name__} should not be instantiated"
@@ -29,23 +29,16 @@ class BaseContainer:
         When `init_resources` and `tear_down` is called,
         same method of connected containers will also be called.
         """
-        if not hasattr(cls, "containers"):
-            cls.containers = []
-
         cls.containers.extend(containers)
 
     @classmethod
     def get_providers(cls) -> dict[str, AbstractProvider[typing.Any]]:
-        if not hasattr(cls, "providers"):
+        if not cls.providers:
             cls.providers = {k: v for k, v in cls.__dict__.items() if isinstance(v, AbstractProvider)}
-
         return cls.providers
 
     @classmethod
     def get_containers(cls) -> list[type["BaseContainer"]]:
-        if not hasattr(cls, "containers"):
-            cls.containers = []
-
         return cls.containers
 
     @classmethod
@@ -77,16 +70,16 @@ class BaseContainer:
             v.reset_override()
 
     @classmethod
-    def resolver(cls, item: typing.Callable[P, T]) -> typing.Callable[[], typing.Awaitable[T]]:
+    def resolver(cls, item: type[T] | typing.Callable[P, T]) -> typing.Callable[[], typing.Awaitable[T]]:
         async def _inner() -> T:
             return await cls.resolve(item)
 
         return _inner
 
     @classmethod
-    async def resolve(cls, object_to_resolve: typing.Callable[..., T]) -> T:
+    async def resolve(cls, object_to_resolve: type[T] | typing.Callable[..., T]) -> T:
         signature: typing.Final = inspect.signature(object_to_resolve)
-        kwargs = {}
+        kwargs: dict[str, typing.Any] = {}
         providers: typing.Final = cls.get_providers()
         for field_name, field_value in signature.parameters.items():
             if field_value.default is not inspect.Parameter.empty or field_name in ("_", "__"):
