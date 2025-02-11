@@ -15,13 +15,15 @@ async def test_batch_providers_overriding() -> None:
         "sync_resource": sync_resource_mock,
         "simple_factory": simple_factory_mock,
         "singleton": singleton_mock,
-        "object": object_mock,  # Use consistent naming
+        "async_factory": async_factory_mock,  # Ensure all providers are included
+        "object": object_mock,  # Ensure all providers are included
     }
 
     with container.DIContainer.override_providers(providers_for_overriding):
         await container.DIContainer.simple_factory()
         dependent_factory = await container.DIContainer.dependent_factory()
         singleton = await container.DIContainer.singleton()
+        async_factory = await container.DIContainer.async_factory()
         obj = await container.DIContainer.object()  # Resolve the mock object
 
     assert dependent_factory.simple_factory.dep1 == simple_factory_mock.dep1
@@ -29,6 +31,7 @@ async def test_batch_providers_overriding() -> None:
     assert dependent_factory.sync_resource == sync_resource_mock
     assert dependent_factory.async_resource == async_resource_mock
     assert singleton is singleton_mock
+    assert async_factory is async_factory_mock
     assert obj is object_mock  # Assert the mock object
 
     assert (await container.DIContainer.async_resource()) != async_resource_mock
@@ -46,7 +49,7 @@ async def test_batch_providers_overriding_sync_resolve() -> None:
         "sync_resource": sync_resource_mock,
         "simple_factory": simple_factory_mock,
         "singleton": singleton_mock,
-        "object": object_mock,  # Use consistent naming
+        "object": object_mock,  # Ensure all providers are included
     }
 
     with container.DIContainer.override_providers(providers_for_overriding):
