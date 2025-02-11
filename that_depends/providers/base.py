@@ -61,16 +61,16 @@ class ResourceContext(typing.Generic[T_co]):
         self.is_async = is_async
 
     @staticmethod
-    def is_context_stack_sync(
-        context_stack: contextlib.AsyncExitStack | contextlib.ExitStack | None
-    ) -> typing.TypeGuard[contextlib.ExitStack]:
-        return isinstance(context_stack, contextlib.ExitStack)
-
-    @staticmethod
     def is_context_stack_async(
         context_stack: contextlib.AsyncExitStack | contextlib.ExitStack | None
     ) -> typing.TypeGuard[contextlib.AsyncExitStack]:
         return isinstance(context_stack, contextlib.AsyncExitStack)
+
+    @staticmethod
+    def is_context_stack_sync(
+        context_stack: contextlib.AsyncExitStack | contextlib.ExitStack | None
+    ) -> typing.TypeGuard[contextlib.ExitStack]:
+        return isinstance(context_stack, contextlib.ExitStack)
 
     async def tear_down(self) -> None:
         if self.context_stack is None:
