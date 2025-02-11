@@ -24,7 +24,10 @@ class Settings:
 
 
 @dataclass
-class NestingTestDTO: ...
+class NestingTestDTO:
+    field_1: str = "default_value_1"
+    field_2: int = 0
+    # Add other fields as necessary
 
 
 @pytest.fixture
