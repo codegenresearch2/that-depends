@@ -37,7 +37,7 @@ def _inject_to_async(
             if field_name in kwargs:
                 continue
 
-            kwargs[field_name] = await field_value.default()
+            kwargs[field_name] = await field_value.default.async_resolve()
             injected = True
         if not injected:
             warnings.warn(
@@ -51,7 +51,7 @@ def _inject_to_async(
 def _inject_to_sync(
     func: typing.Callable[P, T],
 ) -> typing.Callable[P, T]:
-    signature = inspect.signature(func)
+    signature: typing.Final = inspect.signature(func)
 
     @functools.wraps(func)
     def inner(*args: P.args, **kwargs: P.kwargs) -> T:
@@ -70,3 +70,11 @@ def _inject_to_sync(
         return func(*args, **kwargs)
 
     return inner
+
+
+class ClassGetItemMeta(type):
+    def __getitem__(cls, provider: AbstractProvider[T]) -> T:
+        return typing.cast(T, provider)
+
+
+class Provide(metaclass=ClassGetItemMeta): ...
