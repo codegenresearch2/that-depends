@@ -11,24 +11,29 @@ class Selector(AbstractProvider[T_co]):
 
     def __init__(self, selector: typing.Callable[[], str], **providers: AbstractProvider[T_co]) -> None:
         super().__init__()
-        self._selector: typing.Final = selector
-        self._providers: typing.Final = providers
+        self._selector = selector
+        self._providers = providers
+        self._override = None
+
+    def __getattr__(self, attr_name: str) -> typing.Any:  # noqa: ANN401
+        msg = f"'{type(self)}' object has no attribute '{attr_name}'"
+        raise AttributeError(msg)
 
     async def async_resolve(self) -> T_co:
-        if self._override:
+        if self._override is not None:
             return typing.cast(T_co, self._override)
 
-        selected_key: typing.Final = self._selector()
+        selected_key = self._selector()
         if selected_key not in self._providers:
             msg = f"No provider matches {selected_key}"
             raise RuntimeError(msg)
         return await self._providers[selected_key].async_resolve()
 
     def sync_resolve(self) -> T_co:
-        if self._override:
+        if self._override is not None:
             return typing.cast(T_co, self._override)
 
-        selected_key: typing.Final = self._selector()
+        selected_key = self._selector()
         if selected_key not in self._providers:
             msg = f"No provider matches {selected_key}"
             raise RuntimeError(msg)
