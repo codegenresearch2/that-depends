@@ -7,12 +7,13 @@ T_co = typing.TypeVar("T_co", covariant=True)
 
 
 class Selector(AbstractProvider[T_co]):
-    __slots__ = "_selector", "_providers"
+    __slots__ = "_selector", "_providers", "_override"
 
     def __init__(self, selector: typing.Callable[[], str], **providers: AbstractProvider[T_co]) -> None:
         super().__init__()
         self._selector: typing.Final = selector
         self._providers: typing.Final = providers
+        self._override = None
 
     def __getattr__(self, attr_name: str) -> typing.Any:  # noqa: ANN401
         if attr_name in self._providers:
