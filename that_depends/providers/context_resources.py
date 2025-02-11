@@ -76,8 +76,6 @@ class container_context(  # noqa: N801
                 if isinstance(context_item, ResourceContext):
                     if context_item.is_context_stack_async(context_item.context_stack):
                         await context_item.tear_down()
-                    else:
-                        context_item.sync_tear_down()
         finally:
             _CONTAINER_CONTEXT.reset(self._context_token)
 
