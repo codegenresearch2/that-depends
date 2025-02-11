@@ -67,23 +67,25 @@ class ResourceContext(typing.Generic[T_co]):
         context_stack: contextlib.AsyncExitStack | contextlib.ExitStack | None = None,
         instance: T_co | None = None,
     ) -> None:
-        self.instance = instance
+        self.instance: typing.Final = instance
         self.resolving_lock: typing.Final = asyncio.Lock()
-        self.context_stack = context_stack
-        self.is_async = is_async
+        self.context_stack: typing.Final = context_stack
+        self.is_async: typing.Final = is_async
         if not self.is_async and self.is_context_stack_async(self.context_stack):
             msg = "Cannot use async resource in sync mode."
             raise RuntimeError(msg)
 
+    @staticmethod
     def is_context_stack_sync(
-        self, _: contextlib.AsyncExitStack | contextlib.ExitStack | None
+        context_stack: contextlib.AsyncExitStack | contextlib.ExitStack | None,
     ) -> typing.TypeGuard[contextlib.ExitStack]:
-        return isinstance(_, contextlib.ExitStack)
+        return isinstance(context_stack, contextlib.ExitStack)
 
+    @staticmethod
     def is_context_stack_async(
-        self, _: contextlib.AsyncExitStack | contextlib.ExitStack | None
+        context_stack: contextlib.AsyncExitStack | contextlib.ExitStack | None,
     ) -> typing.TypeGuard[contextlib.AsyncExitStack]:
-        return isinstance(_, contextlib.AsyncExitStack)
+        return isinstance(context_stack, contextlib.AsyncExitStack)
 
     async def tear_down(self) -> None:
         if self.context_stack is None:
