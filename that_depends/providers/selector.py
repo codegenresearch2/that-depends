@@ -3,33 +3,33 @@ import typing
 from that_depends.providers.base import AbstractProvider
 
 
-T_co = typing.TypeVar("T_co", covariant=True)
+T = typing.TypeVar("T")
 
 
-class Selector(AbstractProvider[T_co]):
+class Selector(AbstractProvider[T]):
     __slots__ = "_selector", "_providers", "_override"
 
-    def __init__(self, selector: typing.Callable[[], str], **providers: AbstractProvider[T_co]) -> None:
+    def __init__(self, selector: typing.Callable[[], str], **providers: AbstractProvider[T]) -> None:
         super().__init__()
-        self._selector: typing.Final = selector
-        self._providers: typing.Final = providers
+        self._selector = selector
+        self._providers = providers
         self._override = None
 
-    async def async_resolve(self) -> T_co:
-        if self._override:
-            return typing.cast(T_co, self._override)
+    async def async_resolve(self) -> T:
+        if self._override is not None:
+            return typing.cast(T, self._override)
 
-        selected_key: typing.Final = self._selector()
+        selected_key = self._selector()
         if selected_key not in self._providers:
             msg = f"No provider matches {selected_key}"
             raise RuntimeError(msg)
         return await self._providers[selected_key].async_resolve()
 
-    def sync_resolve(self) -> T_co:
-        if self._override:
-            return typing.cast(T_co, self._override)
+    def sync_resolve(self) -> T:
+        if self._override is not None:
+            return typing.cast(T, self._override)
 
-        selected_key: typing.Final = self._selector()
+        selected_key = self._selector()
         if selected_key not in self._providers:
             msg = f"No provider matches {selected_key}"
             raise RuntimeError(msg)
