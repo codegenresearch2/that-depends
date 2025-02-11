@@ -12,7 +12,7 @@ P = typing.ParamSpec("P")
 class Singleton(AbstractProvider[T_co]):
     __slots__ = "_factory", "_args", "_kwargs", "_override", "_instance", "_resolving_lock"
 
-    def __init__(self, factory: type[T_co] | typing.Callable[P, T_co], *args: P.args, **kwargs: P.kwargs) -> None:
+    def __init__(self, factory: typing.Union[type[T_co], typing.Callable[P, T_co]], *args: P.args, **kwargs: P.kwargs) -> None:
         super().__init__()
         self._factory: typing.Final = factory
         self._args: typing.Final = args
@@ -62,4 +62,4 @@ class Singleton(AbstractProvider[T_co]):
             self._instance = None
 
 
-This updated code snippet addresses the feedback by using the correct syntax for the union type in the `factory` parameter. The `|` operator is used to combine the two types, which matches the style of the gold code. This should resolve the syntax error and allow the tests to run successfully.
+This updated code snippet uses the `typing.Union` type hint to define the union type for the `factory` parameter, ensuring compatibility with earlier versions of Python. This should resolve the syntax error and allow the tests to run successfully.
