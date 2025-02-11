@@ -13,7 +13,6 @@ from that_depends.providers.resources import AsyncResource, Resource
 from that_depends.providers.selector import Selector
 from that_depends.providers.singleton import Singleton
 
-
 __all__ = [
     "AbstractProvider",
     "AsyncContextResource",
