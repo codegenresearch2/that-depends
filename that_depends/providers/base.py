@@ -1,5 +1,3 @@
-from contextlib import contextmanager
-from operator import attrgetter
 import abc
 import asyncio
 import contextlib
