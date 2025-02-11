@@ -23,31 +23,24 @@ class Object(AbstractProvider[T_co]):
 
 
 class EnhancedObject(Singleton[T_co]):
-    __slots__ = ("_obj",)
+    __slots__ = ()
 
     def __init__(self, factory: typing.Callable[P, T_co], *args: P.args, **kwargs: P.kwargs) -> None:
         super().__init__(factory, *args, **kwargs)
-        self._obj: T_co | None = None
 
     async def async_resolve(self) -> T_co:
         if self._override is not None:
             return typing.cast(T_co, self._override)
 
-        if self._obj is not None:
-            return self._obj
-
-        async with self._resolving_lock:
-            if self._obj is None:
-                self._obj = await super().async_resolve()
-            return self._obj
+        obj = await super().async_resolve()
+        return obj
 
     def sync_resolve(self) -> T_co:
         if self._override is not None:
             return typing.cast(T_co, self._override)
 
-        if self._obj is None:
-            self._obj = super().sync_resolve()
-        return self._obj
+        obj = super().sync_resolve()
+        return obj
 
 
 This revised code snippet addresses the feedback from the oracle by:
