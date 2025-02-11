@@ -1,4 +1,3 @@
-import asyncio
 import threading
 import typing
 
@@ -18,7 +17,7 @@ class Singleton(AbstractProvider[T_co]):
         self._args: typing.Final = args
         self._kwargs: typing.Final = kwargs
         self._instance: T_co | None = None
-        self._resolving_lock: asyncio.Lock = asyncio.Lock()
+        self._resolving_lock: typing.Final = threading.Lock()  # Use threading.Lock for synchronous context
         self._override: typing.Any = None  # Ensure _override is properly defined
 
     async def async_resolve(self) -> T_co:
@@ -40,9 +39,6 @@ class Singleton(AbstractProvider[T_co]):
         if self._override is not None:
             return typing.cast(T_co, self._override)
 
-        if self._instance is not None:
-            return self._instance
-
         with self._resolving_lock:
             if self._instance is None:
                 self._instance = self._factory(
@@ -57,8 +53,8 @@ class Singleton(AbstractProvider[T_co]):
 
 
 # Changes made:
-# 1. Replaced `threading.Lock` with `asyncio.Lock` in the `__init__` method to ensure compatibility with asynchronous context management.
+# 1. Replaced `asyncio.Lock` with `threading.Lock` in the `__init__` method for the `sync_resolve` method to ensure compatibility with synchronous context management.
 # 2. Added `_override` to the `__slots__` and initialized it in the `__init__` method.
 # 3. Ensured proper formatting of list and dictionary comprehensions with `# type: ignore[arg-type]` comments on separate lines.
-# 4. Used `asyncio.Lock` for the `_resolving_lock` attribute.
+# 4. Used `threading.Lock` for the `_resolving_lock` attribute in the `sync_resolve` method.
 # 5. Used `typing.cast` to ensure consistent return types in both `async_resolve` and `sync_resolve` methods.
