@@ -14,6 +14,8 @@ from that_depends.providers import (
     Selector,
     Singleton,
     container_context,
+    fetch_context_item,
+    sync_container_context,
 )
 
 __all__ = [
@@ -32,4 +34,6 @@ __all__ = [
     "Selector",
     "Singleton",
     "container_context",
+    "fetch_context_item",
+    "sync_container_context",
 ]
