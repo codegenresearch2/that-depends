@@ -15,8 +15,8 @@ async def test_batch_providers_overriding() -> None:
         "sync_resource": sync_resource_mock,
         "simple_factory": simple_factory_mock,
         "singleton": singleton_mock,
-        "async_factory": async_factory_mock,  # Ensure all providers are included
-        "object": object_mock,  # Ensure all providers are included
+        "async_factory": async_factory_mock,
+        "object": object_mock,
     }
 
     with container.DIContainer.override_providers(providers_for_overriding):
@@ -49,7 +49,7 @@ async def test_batch_providers_overriding_sync_resolve() -> None:
         "sync_resource": sync_resource_mock,
         "simple_factory": simple_factory_mock,
         "singleton": singleton_mock,
-        "object": object_mock,  # Ensure all providers are included
+        "object": object_mock,
     }
 
     with container.DIContainer.override_providers(providers_for_overriding):
