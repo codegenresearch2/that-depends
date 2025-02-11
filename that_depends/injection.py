@@ -57,13 +57,15 @@ def _inject_to_sync(
     def inner(*args: P.args, **kwargs: P.kwargs) -> T:
         injected = False
         for field_name, field_value in signature.parameters.items():
-            if isinstance(field_value.default, AbstractProvider):
-                if field_name in kwargs:
-                    msg = f"Injected arguments must not be redefined, {field_name=}"
-                    raise RuntimeError(msg)
+            if not isinstance(field_value.default, AbstractProvider):
+                continue
 
-                kwargs[field_name] = field_value.default.sync_resolve()
-                injected = True
+            if field_name in kwargs:
+                msg = f"Injected arguments must not be redefined, {field_name=}"
+                raise RuntimeError(msg)
+
+            kwargs[field_name] = field_value.default.sync_resolve()
+            injected = True
         if not injected:
             warnings.warn(
                 "Expected injection, but nothing found. Remove @inject decorator.", RuntimeWarning, stacklevel=1
