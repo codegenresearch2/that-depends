@@ -61,13 +61,6 @@ class AbstractProvider(typing.Generic[T_co], abc.ABC):
         """
         return typing.cast(T_co, self)
 
-    def __getattr__(self, name: str) -> typing.Any:
-        """Dynamic attribute access for the provider."""
-        if self._override is not None:
-            return self._override
-
-        raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
-
 
 class ResourceContext(typing.Generic[T_co]):
     __slots__ = "context_stack", "instance", "resolving_lock", "is_async"
