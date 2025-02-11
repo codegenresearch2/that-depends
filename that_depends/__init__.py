@@ -1,16 +1,16 @@
 from that_depends import providers
 from that_depends.container import BaseContainer
 from that_depends.injection import Provide, inject
-from that_depends.providers import container_context, fetch_context_item
+from that_depends.providers import container_context, fetch_context_item, sync_container_context
 from contextlib import asynccontextmanager
 
 
 @asynccontextmanager
-async def container_context():
+async def container_context(context):
     try:
-        yield providers.container_context()
+        yield providers.container_context(context)
     finally:
-        await providers.sync_container_context()
+        await sync_container_context()
 
 
 __all__ = [
@@ -20,4 +20,5 @@ __all__ = [
     "BaseContainer",
     "inject",
     "Provide",
+    "sync_container_context",
 ]
