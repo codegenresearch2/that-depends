@@ -1,4 +1,5 @@
 from that_depends.providers.base import AbstractProvider
+from that_depends.providers.attr_getter import AttrGetter
 from that_depends.providers.context_resources import (
     AsyncContextResource,
     ContextResource,
@@ -12,7 +13,6 @@ from that_depends.providers.object import Object
 from that_depends.providers.resources import AsyncResource, Resource
 from that_depends.providers.selector import Selector
 from that_depends.providers.singleton import Singleton
-from that_depends.providers.attr_getter import AttrGetter
 from that_depends import container_context
 
 __all__ = [
