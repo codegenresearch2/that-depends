@@ -8,6 +8,7 @@ async def test_batch_providers_overriding() -> None:
     async_factory_mock = datetime.datetime.fromisoformat("2025-01-01")
     simple_factory_mock = container.SimpleFactory(dep1="override", dep2=999)
     singleton_mock = container.SingletonFactory(dep1=False)
+    object_mock = object()  # Adding the missing mock object
 
     providers_for_overriding = {
         "async_resource": async_resource_mock,
@@ -15,6 +16,7 @@ async def test_batch_providers_overriding() -> None:
         "simple_factory": simple_factory_mock,
         "singleton": singleton_mock,
         "async_factory": async_factory_mock,
+        "object": object_mock,  # Including the missing mock object
     }
 
     with container.DIContainer.override_providers(providers_for_overriding):
@@ -28,7 +30,7 @@ async def test_batch_providers_overriding() -> None:
     assert dependent_factory.sync_resource == sync_resource_mock
     assert dependent_factory.async_resource == async_resource_mock
     assert singleton is singleton_mock
-    assert obj is not None  # Ensuring the mock object is not None
+    assert obj is object_mock  # Ensuring the mock object is the expected one
 
     # Additional assertion to check that the resolved async resource is not equal to the mock
     assert (await container.DIContainer.async_resource()) != async_resource_mock
@@ -40,12 +42,14 @@ async def test_batch_providers_overriding_sync_resolve() -> None:
     sync_resource_mock = datetime.datetime.fromisoformat("2024-01-01")
     simple_factory_mock = container.SimpleFactory(dep1="override", dep2=999)
     singleton_mock = container.SingletonFactory(dep1=False)
+    object_mock = object()  # Adding the missing mock object
 
     providers_for_overriding = {
         "async_resource": async_resource_mock,
         "sync_resource": sync_resource_mock,
         "simple_factory": simple_factory_mock,
         "singleton": singleton_mock,
+        "object": object_mock,  # Including the missing mock object
     }
 
     with container.DIContainer.override_providers(providers_for_overriding):
@@ -53,12 +57,14 @@ async def test_batch_providers_overriding_sync_resolve() -> None:
         await container.DIContainer.async_resource.async_resolve()
         dependent_factory = container.DIContainer.dependent_factory.sync_resolve()
         singleton = container.DIContainer.singleton.sync_resolve()
+        obj = container.DIContainer.object.sync_resolve()  # Resolving the mock object
 
     assert dependent_factory.simple_factory.dep1 == simple_factory_mock.dep1
     assert dependent_factory.simple_factory.dep2 == simple_factory_mock.dep2
     assert dependent_factory.sync_resource == sync_resource_mock
     assert dependent_factory.async_resource == async_resource_mock
     assert singleton is singleton_mock
+    assert obj is object_mock  # Ensuring the mock object is the expected one
 
     container.DIContainer.reset_override()
 
