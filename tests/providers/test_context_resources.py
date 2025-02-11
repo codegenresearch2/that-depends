@@ -161,6 +161,8 @@ async def test_resource_context_early_teardown() -> None:
 
 
 async def test_teardown_sync_container_context_with_async_resource() -> None:
+    from contextlib import AsyncExitStack
+
     resource_context: ResourceContext[typing.Any] = ResourceContext(is_async=True)
     resource_context.context_stack = AsyncExitStack()
     with pytest.raises(RuntimeError, match="Cannot tear down async context in sync mode"):
