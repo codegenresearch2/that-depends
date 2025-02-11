@@ -4,13 +4,10 @@ from that_depends.injection import Provide, inject
 from that_depends.providers import container_context, fetch_context_item, sync_container_context
 
 
-def container_context(context):
-    def context_manager():
-        try:
-            yield providers.container_context(context)
-        finally:
-            sync_container_context()
-    return context_manager()
+async def container_context(context):
+    async with providers.container_context(context) as context_manager:
+        yield context_manager
+    await sync_container_context()
 
 
 __all__ = [
