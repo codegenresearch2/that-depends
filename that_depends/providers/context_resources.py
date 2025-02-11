@@ -98,7 +98,6 @@ class container_context(  # noqa: N801
             for context_item in reversed(_CONTAINER_CONTEXT.get().values()):
                 if isinstance(context_item, ResourceContext):
                     context_item.sync_tear_down()
-
         finally:
             _CONTAINER_CONTEXT.reset(self._context_token)
 
