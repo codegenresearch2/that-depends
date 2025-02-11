@@ -15,12 +15,6 @@ class Selector(AbstractProvider[T_co]):
         self._providers: typing.Final = providers
         self._override: T_co | None = None
 
-    def __getattr__(self, attr_name: str) -> typing.Any:  # noqa: ANN401
-        if attr_name in self._providers:
-            return self._providers[attr_name]
-        msg = f"'{type(self)}' object has no attribute '{attr_name}'"
-        raise AttributeError(msg)
-
     async def async_resolve(self) -> T_co:
         selected_key: typing.Final = self._selector()
         if selected_key not in self._providers:
