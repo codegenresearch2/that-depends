@@ -147,6 +147,9 @@ def _is_container_context_async() -> bool:
     """Check if the current container context is async.
 
     This function checks if the current container context is async by looking it up in the context.
+
+    Returns:
+        bool: True if the context is async, False otherwise.
     """
     return typing.cast(bool, _get_container_context().get(_ASYNC_CONTEXT_KEY, False))
 
@@ -156,6 +159,13 @@ def fetch_context_item(key: str, default: typing.Any = None) -> typing.Any:  # n
 
     This function retrieves an item from the container context by its key.
     If the item is not found, it returns the default value.
+
+    Args:
+        key (str): The key of the item to retrieve.
+        default (Any, optional): The default value to return if the key is not found.
+
+    Returns:
+        Any: The value of the item with the given key, or the default value if the key is not found.
     """
     return _get_container_context().get(key, default)
 
