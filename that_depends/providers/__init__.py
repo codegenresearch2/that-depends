@@ -4,6 +4,7 @@ from that_depends.providers.context_resources import (
     AsyncContextResource,
     ContextResource,
     DIContextMiddleware,
+    container_context,
     fetch_context_item,
     sync_container_context,
 )
@@ -13,7 +14,6 @@ from that_depends.providers.object import Object
 from that_depends.providers.resources import AsyncResource, Resource
 from that_depends.providers.selector import Selector
 from that_depends.providers.singleton import Singleton
-from that_depends import container_context
 
 __all__ = [
     "AbstractProvider",
