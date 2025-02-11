@@ -19,12 +19,12 @@ class List(AbstractProvider[list[T_co]]):
     def sync_resolve(self) -> list[T_co]:
         return [x.sync_resolve() for x in self._providers]
 
-    async def __call__(self) -> list[T_co]:
-        return await self.async_resolve()
-
     def __getattr__(self, attr_name: str) -> typing.Any:
         msg = f"'{type(self)}' object has no attribute '{attr_name}'"
         raise AttributeError(msg)
+
+    async def __call__(self) -> list[T_co]:
+        return await self.async_resolve()
 
 
 class Dict(AbstractProvider[dict[str, T_co]]):
@@ -43,5 +43,8 @@ class Dict(AbstractProvider[dict[str, T_co]]):
     def __getattr__(self, attr_name: str) -> typing.Any:
         msg = f"'{type(self)}' object has no attribute '{attr_name}'"
         raise AttributeError(msg)
+
+    async def __call__(self) -> dict[str, T_co]:
+        return await self.async_resolve()
 
 # noqa: ANN401
