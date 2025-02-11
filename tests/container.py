@@ -66,4 +66,43 @@ class DIContainer(BaseContainer):
         async_resource=async_resource.cast,
     )
     singleton = providers.Singleton(SingletonFactory, dep1=True)
-    object = providers.Object(object())
+
+    @classmethod
+    def override_sync_resource(cls, new_resource: datetime.datetime) -> None:
+        cls.sync_resource.override(lambda: typing.cast(typing.Iterator[datetime.datetime], iter([new_resource])))
+
+    @classmethod
+    def override_async_resource(cls, new_resource: datetime.datetime) -> None:
+        cls.async_resource.override(lambda: typing.cast(typing.AsyncIterator[datetime.datetime], iter([new_resource])))
+
+    @classmethod
+    def override_simple_factory(cls, dep1: str, dep2: int) -> None:
+        cls.simple_factory.override(lambda: SimpleFactory(dep1=dep1, dep2=dep2))
+
+    @classmethod
+    def override_async_factory(cls, now: datetime.datetime) -> None:
+        cls.async_factory.override(lambda: async_factory(now))
+
+    @classmethod
+    def override_dependent_factory(cls, simple_factory: SimpleFactory, sync_resource: datetime.datetime, async_resource: datetime.datetime) -> None:
+        cls.dependent_factory.override(lambda: DependentFactory(simple_factory=simple_factory, sync_resource=sync_resource, async_resource=async_resource))
+
+    @classmethod
+    def override_singleton(cls, dep1: bool) -> None:
+        cls.singleton.override(lambda: SingletonFactory(dep1=dep1))
+
+    @classmethod
+    def resolve_or_default(cls, provider: providers.Provider, default: typing.Any) -> typing.Any:
+        try:
+            return provider()
+        except KeyError:
+            return default
+
+    @classmethod
+    def assert_provider_value(cls, provider: providers.Provider, expected_value: typing.Any) -> None:
+        resolved_value = provider()
+        assert resolved_value == expected_value
+
+    @classmethod
+    async def async_call_sync(cls, sync_method: typing.Callable[..., typing.Any]) -> typing.Any:
+        return await sync_method()
