@@ -36,13 +36,9 @@ async def _clear_di_container() -> typing.AsyncIterator[None]:
     finally:
         await DIContainer.tear_down()
 
-@pytest.fixture
-def sync_context_resource() -> providers.ContextResource[str]:
-    return DIContainer.sync_context_resource
-
-@pytest.fixture
-def async_context_resource() -> providers.ContextResource[str]:
-    return DIContainer.async_context_resource
+@pytest.fixture(params=[DIContainer.sync_context_resource, DIContainer.async_context_resource])
+def context_resource(request: pytest.FixtureRequest) -> providers.ContextResource[str]:
+    return typing.cast(providers.ContextResource[str], request.param)
 
 @sync_container_context()
 def test_sync_context_resource(sync_context_resource: providers.ContextResource[str]) -> None:
