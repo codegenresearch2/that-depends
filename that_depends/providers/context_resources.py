@@ -58,6 +58,11 @@ class container_context(  # noqa: N801
     def __exit__(
         self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: TracebackType | None
     ) -> None:
+        """Exit the context manager.
+
+        This method handles the cleanup of resources when the context manager is exited.
+        It ensures that both sync and async resources are properly torn down.
+        """
         if self._context_token is None:
             msg = "Context is not set, call ``__enter__`` first"
             raise RuntimeError(msg)
@@ -73,6 +78,11 @@ class container_context(  # noqa: N801
     async def __aexit__(
         self, exc_type: type[BaseException] | None, exc_val: BaseException | None, traceback: TracebackType | None
     ) -> None:
+        """Exit the context manager asynchronously.
+
+        This method handles the asynchronous cleanup of resources when the context manager is exited.
+        It ensures that both sync and async resources are properly torn down.
+        """
         if self._context_token is None:
             msg = "Context is not set, call ``__aenter__`` first"
             raise RuntimeError(msg)
@@ -90,6 +100,11 @@ class container_context(  # noqa: N801
             _CONTAINER_CONTEXT.reset(self._context_token)
 
     def __call__(self, func: typing.Callable[P, T_co]) -> typing.Callable[P, T_co]:
+        """Decorator to run a function within the context manager.
+
+        This decorator allows you to run a function within the context manager,
+        ensuring that the context is properly managed.
+        """
         if inspect.iscoroutinefunction(func):
 
             @wraps(func)
@@ -117,6 +132,10 @@ class DIContextMiddleware:
 
 
 def _get_container_context() -> dict[str, typing.Any]:
+    """Get the current container context.
+
+    This function retrieves the current context from the context variable.
+    """
     try:
         return _CONTAINER_CONTEXT.get()
     except LookupError as exc:
@@ -125,10 +144,19 @@ def _get_container_context() -> dict[str, typing.Any]:
 
 
 def _is_container_context_async() -> bool:
+    """Check if the current container context is async.
+
+    This function checks if the current container context is async by looking it up in the context.
+    """
     return typing.cast(bool, _get_container_context().get(_ASYNC_CONTEXT_KEY, False))
 
 
 def fetch_context_item(key: str, default: typing.Any = None) -> typing.Any:  # noqa: ANN401
+    """Fetch an item from the container context.
+
+    This function retrieves an item from the container context by its key.
+    If the item is not found, it returns the default value.
+    """
     return _get_container_context().get(key, default)
 
 
