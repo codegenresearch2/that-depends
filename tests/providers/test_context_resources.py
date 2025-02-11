@@ -149,9 +149,9 @@ async def test_context_resource_with_dynamic_resource() -> None:
 
 
 async def test_early_exit_of_container_context() -> None:
-    with pytest.raises(RuntimeError, match="Context is not set, call ``__aexit__`` first"):
+    with pytest.raises(RuntimeError, match="Context is not set, call `__aexit__` first"):
         await container_context().__aexit__(None, None, None)
-    with pytest.raises(RuntimeError, match="Context is not set, call ``__exit__`` first"):
+    with pytest.raises(RuntimeError, match="Context is not set, call `__exit__` first"):
         container_context().__exit__(None, None, None)
 
 
