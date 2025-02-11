@@ -33,12 +33,14 @@ class BaseContainer:
 
     @classmethod
     def get_providers(cls) -> dict[str, AbstractProvider[typing.Any]]:
-        if not cls.providers:
+        if not hasattr(cls, "providers"):
             cls.providers = {k: v for k, v in cls.__dict__.items() if isinstance(v, AbstractProvider)}
         return cls.providers
 
     @classmethod
     def get_containers(cls) -> list[type["BaseContainer"]]:
+        if not hasattr(cls, "containers"):
+            cls.containers = []
         return cls.containers
 
     @classmethod
