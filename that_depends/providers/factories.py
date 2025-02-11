@@ -28,10 +28,10 @@ class Factory(AbstractFactory[T_co]):
     async def async_resolve(self) -> T_co:
         if self._override is not None:
             return typing.cast(T_co, self._override)
-        return await self._factory(
-            *[await x.async_resolve() if isinstance(x, AbstractProvider) else x for x in self._args],
-            **{k: await v.async_resolve() if isinstance(v, AbstractProvider) else v for k, v in self._kwargs.items()},
-        )
+        factory = self._factory
+        if isinstance(factory, typing.Callable):
+            return await factory(*self._args, **self._kwargs)
+        raise TypeError("Factory must be a callable that returns an awaitable")
 
 
 class AsyncFactory(AbstractFactory[T_co]):
@@ -47,10 +47,7 @@ class AsyncFactory(AbstractFactory[T_co]):
     async def async_resolve(self) -> T_co:
         if self._override is not None:
             return typing.cast(T_co, self._override)
-        return await self._factory(
-            *[await x.async_resolve() if isinstance(x, AbstractProvider) else x for x in self._args],
-            **{k: await v.async_resolve() if isinstance(v, AbstractProvider) else v for k, v in self._kwargs.items()},
-        )
+        return await self._factory(*self._args, **self._kwargs)
 
     def sync_resolve(self) -> typing.NoReturn:
         msg = "AsyncFactory cannot be resolved synchronously"
