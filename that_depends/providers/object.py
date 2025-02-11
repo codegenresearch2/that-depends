@@ -5,22 +5,25 @@ from that_depends.providers.singleton import Singleton
 
 
 T_co = typing.TypeVar("T_co", covariant=True)
-P = typing.ParamSpec("P")
 
 
 class Object(AbstractProvider[T_co]):
-    __slots__ = ("_provider", "_override")
+    __slots__ = ("_obj", "_override")
 
-    def __init__(self, factory: typing.Callable[P, T_co], *args: P.args, **kwargs: P.kwargs) -> None:
+    def __init__(self, obj: T_co) -> None:
         super().__init__()
-        self._provider = Singleton(factory, *args, **kwargs)
-        self._override = None
+        self._obj: typing.Final = obj
+        self._override: T_co | None = None
 
     async def async_resolve(self) -> T_co:
-        return await self._provider.async_resolve()
+        if self._override is not None:
+            return self._override
+        return self._obj
 
     def sync_resolve(self) -> T_co:
-        return self._provider.sync_resolve()
+        if self._override is not None:
+            return self._override
+        return self._obj
 
     def override(self, obj: T_co) -> None:
         self._override = obj
@@ -29,7 +32,4 @@ class Object(AbstractProvider[T_co]):
         self._override = obj
 
     def clear_override(self) -> None:
-        self._override = None
-
-    async def async_clear_override(self) -> None:
         self._override = None
