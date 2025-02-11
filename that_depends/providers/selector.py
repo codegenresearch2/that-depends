@@ -7,13 +7,12 @@ T_co = typing.TypeVar("T_co", covariant=True)
 
 
 class Selector(AbstractProvider[T_co]):
-    __slots__ = "_selector", "_providers", "_override"
+    __slots__ = "_selector", "_providers"
 
     def __init__(self, selector: typing.Callable[[], str], **providers: AbstractProvider[T_co]) -> None:
         super().__init__()
         self._selector: typing.Final = selector
         self._providers: typing.Final = providers
-        self._override: T_co | None = None
 
     def __getattr__(self, attr_name: str) -> typing.Any:  # noqa: ANN401
         if attr_name in self._providers:
@@ -23,8 +22,6 @@ class Selector(AbstractProvider[T_co]):
 
     async def async_resolve(self) -> T_co:
         selected_key: typing.Final = self._selector()
-        if self._override is not None:
-            return typing.cast(T_co, self._override)
         if selected_key not in self._providers:
             msg = f"No provider matches {selected_key}"
             raise RuntimeError(msg)
@@ -32,8 +29,6 @@ class Selector(AbstractProvider[T_co]):
 
     def sync_resolve(self) -> T_co:
         selected_key: typing.Final = self._selector()
-        if self._override is not None:
-            return typing.cast(T_co, self._override)
         if selected_key not in self._providers:
             msg = f"No provider matches {selected_key}"
             raise RuntimeError(msg)
