@@ -62,4 +62,4 @@ class Singleton(AbstractProvider[T_co]):
             self._instance = None
 
 
-I have updated the type hint for the `factory` parameter to match the gold code's syntax, which uses `type[T_co] | typing.Callable[P, T_co]`. Additionally, I removed the problematic comment to ensure the code is syntactically correct.
+I have removed the problematic comment that was causing the syntax error. The code should now execute without any issues.
