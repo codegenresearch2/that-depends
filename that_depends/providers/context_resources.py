@@ -40,24 +40,56 @@ class container_context(  # noqa: N801
     __slots__ = "_initial_context", "_context_token"
 
     def __init__(self, initial_context: ContextType | None = None) -> None:
+        """
+        Initialize the container context manager.
+
+        Args:
+            initial_context (dict[str, typing.Any], optional): The initial context to set. Defaults to None.
+        """
         self._initial_context: ContextType = initial_context or {}
         self._context_token: Token[ContextType] | None = None
 
     def __enter__(self) -> ContextType:
+        """
+        Enter the context manager for synchronous operations.
+
+        Returns:
+            ContextType: The current context.
+        """
         self._initial_context[_ASYNC_CONTEXT_KEY] = False
         return self._enter()
 
     async def __aenter__(self) -> ContextType:
+        """
+        Enter the context manager for asynchronous operations.
+
+        Returns:
+            ContextType: The current context.
+        """
         self._initial_context[_ASYNC_CONTEXT_KEY] = True
         return self._enter()
 
     def _enter(self) -> ContextType:
+        """
+        Set the context and return the current context.
+
+        Returns:
+            ContextType: The current context.
+        """
         self._context_token = _CONTAINER_CONTEXT.set(self._initial_context or {})
         return _CONTAINER_CONTEXT.get()
 
     def __exit__(
         self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: TracebackType | None
     ) -> None:
+        """
+        Exit the context manager for synchronous operations.
+
+        Args:
+            exc_type (type[BaseException] | None): The type of the exception.
+            exc_value (BaseException | None): The exception instance.
+            traceback (TracebackType | None): The traceback object.
+        """
         if self._context_token is None:
             msg = "Context is not set, call ``__enter__`` first"
             raise RuntimeError(msg)
@@ -73,6 +105,14 @@ class container_context(  # noqa: N801
     async def __aexit__(
         self, exc_type: type[BaseException] | None, exc_val: BaseException | None, traceback: TracebackType | None
     ) -> None:
+        """
+        Exit the context manager for asynchronous operations.
+
+        Args:
+            exc_type (type[BaseException] | None): The type of the exception.
+            exc_val (BaseException | None): The exception instance.
+            traceback (TracebackType | None): The traceback object.
+        """
         if self._context_token is None:
             msg = "Context is not set, call ``__aenter__`` first"
             raise RuntimeError(msg)
@@ -90,6 +130,15 @@ class container_context(  # noqa: N801
             _CONTAINER_CONTEXT.reset(self._context_token)
 
     def __call__(self, func: typing.Callable[P, T_co]) -> typing.Callable[P, T_co]:
+        """
+        Decorate a function to manage the context for both sync and async functions.
+
+        Args:
+            func (typing.Callable[P, T_co]): The function to decorate.
+
+        Returns:
+            typing.Callable[P, T_co]: The decorated function.
+        """
         if inspect.iscoroutinefunction(func):
 
             @wraps(func)
@@ -109,14 +158,34 @@ class container_context(  # noqa: N801
 
 class DIContextMiddleware:
     def __init__(self, app: ASGIApp) -> None:
+        """
+        Initialize the DI context middleware.
+
+        Args:
+            app (ASGIApp): The ASGI application to wrap.
+        """
         self.app: typing.Final = app
 
     @container_context()
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """
+        Call the ASGI application with the given scope, receive, and send functions.
+
+        Args:
+            scope (Scope): The ASGI scope.
+            receive (Receive): The receive function.
+            send (Send): The send function.
+        """
         return await self.app(scope, receive, send)
 
 
 def _get_container_context() -> dict[str, typing.Any]:
+    """
+    Get the current container context.
+
+    Returns:
+        dict[str, typing.Any]: The current container context.
+    """
     try:
         return _CONTAINER_CONTEXT.get()
     except LookupError as exc:
@@ -125,10 +194,26 @@ def _get_container_context() -> dict[str, typing.Any]:
 
 
 def _is_container_context_async() -> bool:
+    """
+    Check if the current container context is async.
+
+    Returns:
+        bool: Whether the current container context is async.
+    """
     return typing.cast(bool, _get_container_context().get(_ASYNC_CONTEXT_KEY, False))
 
 
 def fetch_context_item(key: str, default: typing.Any = None) -> typing.Any:  # noqa: ANN401
+    """
+    Fetch a context item by key with a default value.
+
+    Args:
+        key (str): The key to fetch.
+        default (typing.Any, optional): The default value to return if the key is not found. Defaults to None.
+
+    Returns:
+        typing.Any: The value associated with the key or the default value.
+    """
     return _get_container_context().get(key, default)
 
 
@@ -148,10 +233,24 @@ class ContextResource(AbstractResource[T_co]):
         *args: P.args,
         **kwargs: P.kwargs,
     ) -> None:
+        """
+        Initialize the ContextResource.
+
+        Args:
+            creator (typing.Callable[P, typing.Iterator[T_co] | typing.AsyncIterator[T_co]]): The resource creator.
+            *args (P.args): Positional arguments for the creator.
+            **kwargs (P.kwargs): Keyword arguments for the creator.
+        """
         super().__init__(creator, *args, **kwargs)
         self._internal_name: typing.Final = f"{creator.__name__}-{uuid.uuid4()}"
 
     def _fetch_context(self) -> ResourceContext[T_co]:
+        """
+        Fetch the resource context.
+
+        Returns:
+            ResourceContext[T_co]: The resource context.
+        """
         container_context = _get_container_context()
         if resource_context := container_context.get(self._internal_name):
             return typing.cast(ResourceContext[T_co], resource_context)
@@ -168,5 +267,13 @@ class AsyncContextResource(ContextResource[T_co]):
         *args: P.args,
         **kwargs: P.kwargs,
     ) -> None:
+        """
+        Initialize the AsyncContextResource.
+
+        Args:
+            creator (typing.Callable[P, typing.AsyncIterator[T_co]]): The async resource creator.
+            *args (P.args): Positional arguments for the creator.
+            **kwargs (P.kwargs): Keyword arguments for the creator.
+        """
         warnings.warn("AsyncContextResource is deprecated, use ContextResource instead", RuntimeWarning, stacklevel=1)
         super().__init__(creator, *args, **kwargs)
