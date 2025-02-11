@@ -57,11 +57,11 @@ class BaseContainer:
 
     @classmethod
     async def tear_down(cls) -> None:
-        processed_containers = set()
         for container in reversed(cls.get_containers()):
-            if container not in processed_containers:
-                processed_containers.add(container)
-                await container.tear_down()
+            await container.tear_down()
+        for provider in cls.get_providers().values():
+            if isinstance(provider, (Resource, Singleton)):
+                await provider.tear_down()
 
     @classmethod
     def reset_override(cls) -> None:
