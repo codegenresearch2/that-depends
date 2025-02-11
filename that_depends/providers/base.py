@@ -15,6 +15,8 @@ class AttrGetter(typing.Generic[T_co]):
         self._default = default
 
     def __getattr__(self, name: str) -> T_co:
+        if name.startswith('_'):
+            raise AttributeError(f"Access to private attribute '{name}' is not allowed.")
         return attrgetter(name)(self._default())
 
 class AbstractProvider(typing.Generic[T_co], abc.ABC):
