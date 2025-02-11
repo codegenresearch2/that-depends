@@ -14,7 +14,7 @@ def inject(
     func: typing.Callable[P, T],
 ) -> typing.Callable[P, T]:
     if inspect.iscoroutinefunction(func):
-        return _inject_to_async(func)
+        return typing.cast(typing.Callable[P, T], _inject_to_async(func))
 
     return _inject_to_sync(func)
 
