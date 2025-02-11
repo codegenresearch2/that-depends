@@ -6,7 +6,7 @@ import uuid
 import pytest
 
 from that_depends import BaseContainer, fetch_context_item, providers
-from that_depends.providers import container_context, sync_container_context
+from that_depends.providers import container_context
 from that_depends.providers.base import ResourceContext
 
 logger = logging.getLogger(__name__)
@@ -29,8 +29,8 @@ class DIContainer(BaseContainer):
     async_context_resource = providers.ContextResource(create_async_context_resource)
     dynamic_context_resource = providers.Selector(
         lambda: fetch_context_item("resource_type") or "sync",
-        sync=sync_context_resource,
-        async_=async_context_resource,
+        sync=providers.ContextResource(create_sync_context_resource),
+        async_=providers.ContextResource(create_async_context_resource),
     )
 
 
@@ -67,14 +67,14 @@ async def test_context_resource_without_context_init(
         context_resource.sync_resolve()
 
 
-@sync_container_context()
+@container_context()
 async def test_context_resource(context_resource: providers.ContextResource[str]) -> None:
     context_resource_result = await context_resource()
 
     assert await context_resource() is context_resource_result
 
 
-@sync_container_context()
+@container_context()
 def test_sync_context_resource(sync_context_resource: providers.ContextResource[str]) -> None:
     context_resource_result = sync_context_resource.sync_resolve()
 
@@ -82,7 +82,7 @@ def test_sync_context_resource(sync_context_resource: providers.ContextResource[
 
 
 async def test_async_context_resource_in_sync_context(async_context_resource: providers.ContextResource[str]) -> None:
-    with pytest.raises(RuntimeError, match="AsyncResource cannot be resolved in an sync context."), sync_container_context():
+    with pytest.raises(RuntimeError, match="AsyncResource cannot be resolved in an sync context."), container_context():
         await async_context_resource()
 
 
