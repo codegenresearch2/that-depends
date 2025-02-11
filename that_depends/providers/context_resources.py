@@ -59,7 +59,8 @@ class container_context(  # noqa: N801
             msg = "Context is not set, call ``__enter__`` first"
             raise RuntimeError(msg)
         try:
-            for context_item in reversed(_CONTAINER_CONTEXT.get().values()):
+            container_context = _CONTAINER_CONTEXT.get()
+            for context_item in reversed(list(container_context.values())):
                 if isinstance(context_item, ResourceContext):
                     if context_item.is_async:
                         context_item.tear_down()
@@ -75,7 +76,8 @@ class container_context(  # noqa: N801
             msg = "Context is not set, call ``__aenter__`` first"
             raise RuntimeError(msg)
         try:
-            for context_item in reversed(_CONTAINER_CONTEXT.get().values()):
+            container_context = _CONTAINER_CONTEXT.get()
+            for context_item in reversed(list(container_context.values())):
                 if isinstance(context_item, ResourceContext):
                     if context_item.is_async:
                         await context_item.tear_down()
