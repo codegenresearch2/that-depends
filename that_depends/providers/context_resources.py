@@ -1,9 +1,9 @@
+import contextlib
 import inspect
 import logging
 import typing
 import uuid
 import warnings
-from contextlib import asynccontextmanager, contextmanager
 from contextvars import ContextVar, Token
 from functools import wraps
 from types import TracebackType
@@ -25,7 +25,7 @@ _ASYNC_CONTEXT_KEY: typing.Final[str] = "__ASYNC_CONTEXT__"
 ContextType = dict[str, typing.Any]
 
 
-@contextmanager
+@contextlib.contextmanager
 def sync_container_context(initial_context: ContextType | None = None) -> typing.Iterator[ContextType]:
     """Manage the context of ContextResources for synchronous operations."""
     if initial_context is None:
@@ -38,7 +38,7 @@ def sync_container_context(initial_context: ContextType | None = None) -> typing
         _CONTAINER_CONTEXT.reset(context_token)
 
 
-@asynccontextmanager
+@contextlib.asynccontextmanager
 async def container_context(initial_context: ContextType | None = None) -> typing.AsyncIterator[ContextType]:
     """Manage the context of ContextResources for asynchronous operations."""
     if initial_context is None:
