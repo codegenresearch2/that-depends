@@ -37,7 +37,7 @@ def _inject_to_async(
             if field_name in kwargs:
                 continue
 
-            kwargs[field_name] = await field_value.default()
+            kwargs[field_name] = await field_value.default.async_resolve()
             injected = True
         if not injected:
             warnings.warn(
@@ -55,7 +55,6 @@ def _inject_to_sync(
 
     @functools.wraps(func)
     def inner(*args: P.args, **kwargs: P.kwargs) -> T:
-        injected = False
         for field_name, field_value in signature.parameters.items():
             if not isinstance(field_value.default, AbstractProvider):
                 continue
@@ -64,9 +63,8 @@ def _inject_to_sync(
                 raise RuntimeError(msg)
 
             kwargs[field_name] = field_value.default.sync_resolve()
-            injected = True
 
-        if not injected:
+        if len(kwargs) == 0:
             warnings.warn(
                 "Expected injection, but nothing found. Remove @inject decorator.", RuntimeWarning, stacklevel=1
             )
@@ -74,3 +72,12 @@ def _inject_to_sync(
         return func(*args, **kwargs)
 
     return inner
+
+
+class ClassGetItemMeta(type):
+    def __getitem__(cls, provider: AbstractProvider[T]) -> T:
+        return typing.cast(T, provider)
+
+
+class Provide(metaclass=ClassGetItemMeta):
+    pass
