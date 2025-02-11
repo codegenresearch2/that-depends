@@ -26,11 +26,20 @@ def _inject_to_async(
 
     @functools.wraps(func)
     async def inner(*args: P.args, **kwargs: P.kwargs) -> T:
-        for field_name, field_value in signature.parameters.items():
-            if isinstance(field_value.default, AbstractProvider):
-                if field_name not in kwargs:
-                    kwargs[field_name] = await field_value.default()
-        if not kwargs:
+        injected = False
+        for i, (field_name, field_value) in enumerate(signature.parameters.items()):
+            if i < len(args):
+                continue
+
+            if not isinstance(field_value.default, AbstractProvider):
+                continue
+
+            if field_name in kwargs:
+                continue
+
+            kwargs[field_name] = await field_value.default()
+            injected = True
+        if not injected:
             warnings.warn(
                 "Expected injection, but nothing found. Remove @inject decorator.", RuntimeWarning, stacklevel=1
             )
@@ -48,20 +57,16 @@ def _inject_to_sync(
     def inner(*args: P.args, **kwargs: P.kwargs) -> T:
         for field_name, field_value in signature.parameters.items():
             if isinstance(field_value.default, AbstractProvider):
-                if field_name not in kwargs:
-                    kwargs[field_name] = field_value.default.sync_resolve()
+                if field_name in kwargs:
+                    msg = f"Injected arguments must not be redefined, {field_name=}"
+                    raise RuntimeError(msg)
+
+                kwargs[field_name] = field_value.default.sync_resolve()
         if not kwargs:
             warnings.warn(
                 "Expected injection, but nothing found. Remove @inject decorator.", RuntimeWarning, stacklevel=1
             )
+
         return func(*args, **kwargs)
 
     return inner
-
-
-class ClassGetItemMeta(type):
-    def __getitem__(cls, provider: AbstractProvider[T]) -> T:
-        return typing.cast(T, provider)
-
-
-class Provide(metaclass=ClassGetItemMeta): ...
