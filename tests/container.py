@@ -68,12 +68,20 @@ class DIContainer(BaseContainer):
     singleton = providers.Singleton(SingletonFactory, dep1=True)
 
     @classmethod
-    def override_sync_resource(cls) -> datetime.datetime:
-        return datetime.datetime.now(tz=datetime.timezone.utc)
+    def override_sync_resource(cls) -> typing.Iterator[datetime.datetime]:
+        logger.debug("Resource initiated")
+        try:
+            yield datetime.datetime.now(tz=datetime.timezone.utc)
+        finally:
+            logger.debug("Resource destructed")
 
     @classmethod
-    def override_async_resource(cls) -> datetime.datetime:
-        return datetime.datetime.now(tz=datetime.timezone.utc)
+    def override_async_resource(cls) -> typing.AsyncIterator[datetime.datetime]:
+        logger.debug("Async resource initiated")
+        try:
+            yield datetime.datetime.now(tz=datetime.timezone.utc)
+        finally:
+            logger.debug("Async resource destructed")
 
     @classmethod
     def override_simple_factory(cls) -> SimpleFactory:
@@ -87,8 +95,8 @@ class DIContainer(BaseContainer):
     def override_dependent_factory(cls) -> DependentFactory:
         return DependentFactory(
             simple_factory=cls.override_simple_factory(),
-            sync_resource=cls.override_sync_resource(),
-            async_resource=cls.override_async_resource(),
+            sync_resource=next(cls.override_sync_resource()),
+            async_resource=next(cls.override_async_resource()),
         )
 
     @classmethod
