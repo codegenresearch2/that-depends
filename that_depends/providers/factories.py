@@ -28,7 +28,7 @@ class Factory(AbstractFactory[T_co]):
     async def async_resolve(self) -> T_co:
         if self._override is not None:
             return typing.cast(T_co, self._override)
-        if isinstance(self._factory, typing.Callable):
+        if callable(self._factory) and asyncio.iscoroutinefunction(self._factory):
             return await self._factory(*self._args, **self._kwargs)
         raise TypeError("Factory must be a callable that returns an awaitable")
 
