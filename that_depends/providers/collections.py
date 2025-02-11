@@ -15,7 +15,7 @@ class List(AbstractProvider[list[T_co]]):
         self._providers: typing.Final = providers
 
     async def async_resolve(self) -> list[T_co]:
-        return await asyncio.gather(*[provider.async_resolve() for provider in self._providers])
+        return [await provider.async_resolve() for provider in self._providers]
 
     def sync_resolve(self) -> list[T_co]:
         return [provider.sync_resolve() for provider in self._providers]
