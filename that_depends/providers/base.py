@@ -75,15 +75,17 @@ class ResourceContext(typing.Generic[T_co]):
             msg = "Cannot use async resource in sync mode."
             raise RuntimeError(msg)
 
+    @staticmethod
     def is_context_stack_sync(
-        self, _: contextlib.AsyncExitStack | contextlib.ExitStack | None
+        context_stack: contextlib.AsyncExitStack | contextlib.ExitStack | None
     ) -> typing.TypeGuard[contextlib.ExitStack]:
-        return isinstance(_, contextlib.ExitStack)
+        return isinstance(context_stack, contextlib.ExitStack)
 
+    @staticmethod
     def is_context_stack_async(
-        self, _: contextlib.AsyncExitStack | contextlib.ExitStack | None
+        context_stack: contextlib.AsyncExitStack | contextlib.ExitStack | None
     ) -> typing.TypeGuard[contextlib.AsyncExitStack]:
-        return isinstance(_, contextlib.AsyncExitStack)
+        return isinstance(context_stack, contextlib.AsyncExitStack)
 
     async def tear_down(self) -> None:
         if self.context_stack is None:
