@@ -216,15 +216,3 @@ class AbstractResource(AbstractProvider[T], abc.ABC):
                 ),
             )
         return typing.cast(T, context.instance)
-
-
-class AbstractFactory(AbstractProvider[T], abc.ABC):
-    """Abstract Factory Class."""
-
-    @property
-    def provider(self) -> typing.Callable[[], typing.Coroutine[typing.Any, typing.Any, T]]:
-        return self.async_resolve
-
-    @property
-    def sync_provider(self) -> typing.Callable[[], T]:
-        return self.sync_resolve
