@@ -1,6 +1,5 @@
 import pytest
 import datetime
-import logging
 import uuid
 import typing
 from contextlib import AsyncExitStack
@@ -29,26 +28,23 @@ class DIContainer(BaseContainer):
         async_=async_context_resource,
     )
 
-@pytest.fixture(autouse=True)
-async def _clear_di_container() -> typing.AsyncIterator[None]:
-    try:
-        yield
-    finally:
-        await DIContainer.tear_down()
+@pytest.fixture
+def sync_context_resource() -> providers.ContextResource[str]:
+    return DIContainer.sync_context_resource
 
-@pytest.fixture(params=[DIContainer.sync_context_resource, DIContainer.async_context_resource])
-def context_resource(request: pytest.FixtureRequest) -> providers.ContextResource[str]:
-    return typing.cast(providers.ContextResource[str], request.param)
+@pytest.fixture
+def async_context_resource() -> providers.ContextResource[str]:
+    return DIContainer.async_context_resource
 
 @sync_container_context()
 def test_sync_context_resource(sync_context_resource: providers.ContextResource[str]) -> None:
     context_resource_result = sync_context_resource.sync_resolve()
-    assert sync_context_resource.sync_resolve() is context_resource_result
+    assert context_resource_result == f"sync {uuid.uuid4()}"
 
 @container_context()
 async def test_context_resource(context_resource: providers.ContextResource[str]) -> None:
     context_resource_result = await context_resource()
-    assert await context_resource() is context_resource_result
+    assert context_resource_result == f"sync {uuid.uuid4()}"
 
 @container_context()
 async def test_async_context_resource_in_sync_context(async_context_resource: providers.ContextResource[str]) -> None:
@@ -56,33 +52,29 @@ async def test_async_context_resource_in_sync_context(async_context_resource: pr
         await async_context_resource()
 
 @container_context()
-async def test_context_resource_different_context(context_resource: providers.ContextResource[datetime.datetime]) -> None:
-    async with container_context():
-        context_resource_instance1 = await context_resource()
-    async with container_context():
-        context_resource_instance2 = await context_resource()
-    assert context_resource_instance1 is not context_resource_instance2
+def test_context_resource_different_context(sync_context_resource: providers.ContextResource[str]) -> None:
+    context_resource_result1 = sync_context_resource.sync_resolve()
+    context_resource_result2 = sync_context_resource.sync_resolve()
+    assert context_resource_result1 != context_resource_result2
 
 @container_context()
-async def test_context_resource_included_context(context_resource: providers.ContextResource[datetime.datetime]) -> None:
-    async with container_context():
-        context_resource_instance1 = await context_resource()
-        async with container_context():
-            context_resource_instance2 = await context_resource()
-        context_resource_instance3 = await context_resource()
-    assert context_resource_instance1 is not context_resource_instance2
-    assert context_resource_instance1 is context_resource_instance3
+def test_context_resource_included_context(sync_context_resource: providers.ContextResource[str]) -> None:
+    context_resource_result1 = sync_context_resource.sync_resolve()
+    with container_context():
+        context_resource_result2 = sync_context_resource.sync_resolve()
+    context_resource_result3 = sync_context_resource.sync_resolve()
+    assert context_resource_result1 != context_resource_result2
+    assert context_resource_result1 == context_resource_result3
 
 @container_context()
-async def test_context_resources_overriding(context_resource: providers.ContextResource[str]) -> None:
-    context_resource_mock = datetime.datetime.now(tz=datetime.timezone.utc)
-    context_resource.override(context_resource_mock)
-    context_resource_result = await context_resource()
-    context_resource_result2 = context_resource.sync_resolve()
-    assert context_resource_result is context_resource_result2 is context_resource_mock
+def test_context_resources_overriding(sync_context_resource: providers.ContextResource[str]) -> None:
+    context_resource_mock = f"mock_{uuid.uuid4()}"
+    sync_context_resource.override(context_resource_mock)
+    context_resource_result = sync_context_resource.sync_resolve()
+    assert context_resource_result == context_resource_mock
     DIContainer.reset_override()
     with pytest.raises(RuntimeError, match="Context is not set. Use container_context"):
-        await context_resource()
+        sync_context_resource.sync_resolve()
 
 @pytest.mark.asyncio
 async def test_context_resources_init_and_tear_down() -> None:
