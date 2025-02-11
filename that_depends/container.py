@@ -57,11 +57,12 @@ class BaseContainer:
 
     @classmethod
     async def tear_down(cls) -> None:
-        for container in reversed(cls.get_containers()):
-            await container.tear_down()
-        for provider in cls.get_providers().values():
+        for provider in reversed(cls.get_providers().values()):
             if isinstance(provider, (Resource, Singleton)):
                 await provider.tear_down()
+
+        for container in reversed(cls.get_containers()):
+            await container.tear_down()
 
     @classmethod
     def reset_override(cls) -> None:
@@ -77,9 +78,9 @@ class BaseContainer:
 
     @classmethod
     async def resolve(cls, object_to_resolve: type[T] | typing.Callable[..., T]) -> T:
-        signature: typing.Final = inspect.signature(object_to_resolve)
+        signature = inspect.signature(object_to_resolve)
         kwargs: dict = {}
-        providers: typing.Final = cls.get_providers()
+        providers = cls.get_providers()
         for field_name, field_value in signature.parameters.items():
             if field_value.default is not inspect.Parameter.empty or field_name in ("_", "__"):
                 continue
@@ -95,9 +96,9 @@ class BaseContainer:
     @classmethod
     @contextmanager
     def override_providers(cls, providers_for_overriding: dict[str, typing.Any]) -> typing.Iterator[None]:
-        current_providers: typing.Final = cls.get_providers()
-        current_provider_names: typing.Final = set(current_providers.keys())
-        given_provider_names: typing.Final = set(providers_for_overriding.keys())
+        current_providers = cls.get_providers()
+        current_provider_names = set(current_providers.keys())
+        given_provider_names = set(providers_for_overriding.keys())
 
         for given_name in given_provider_names:
             if given_name not in current_provider_names:
