@@ -1,4 +1,3 @@
-from that_depends.providers.attr_getter import AttrGetter
 from that_depends.providers.base import AbstractProvider
 from that_depends.providers.collections import Dict, List
 from that_depends.providers.context_resources import (
@@ -21,7 +20,6 @@ __all__ = [
     "AsyncContextResource",
     "AsyncFactory",
     "AsyncResource",
-    "AttrGetter",
     "ContextResource",
     "DIContextMiddleware",
     "Dict",
