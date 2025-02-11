@@ -5,18 +5,18 @@ from that_depends.providers import AttrGetter
 from that_depends.providers.base import AbstractProvider
 
 
-T_co = typing.TypeVar("T_co", covariant=True)
+T_co = typing.TypeVar("T_co", covariant=True, bound=typing.Callable[..., typing.Any])
 P = typing.ParamSpec("P")
 
 
 class Singleton(AbstractProvider[T_co]):
     __slots__ = "_factory", "_args", "_kwargs", "_override", "_instance", "_resolving_lock"
 
-    def __init__(self, factory: type[T_co] | typing.Callable[P, T_co], *args: P.args, **kwargs: P.kwargs) -> None:
+    def __init__(self, factory: T_co, *args: P.args, **kwargs: P.kwargs) -> None:
         super().__init__()
-        self._factory: typing.Final = factory
-        self._args: typing.Final = args
-        self._kwargs: typing.Final = kwargs
+        self._factory = factory
+        self._args = args
+        self._kwargs = kwargs
         self._override = None
         self._instance: T_co | None = None
         self._resolving_lock: typing.Final = asyncio.Lock()
