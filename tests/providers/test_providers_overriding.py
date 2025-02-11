@@ -8,6 +8,7 @@ async def test_batch_providers_overriding() -> None:
     async_factory_mock = datetime.datetime.fromisoformat("2025-01-01")
     simple_factory_mock = container.SimpleFactory(dep1="override", dep2=999)
     singleton_mock = container.SingletonFactory(dep1=False)
+    object_mock = object()  # Adding the missing mock object
 
     providers_for_overriding = {
         "async_resource": async_resource_mock,
@@ -15,6 +16,7 @@ async def test_batch_providers_overriding() -> None:
         "simple_factory": simple_factory_mock,
         "singleton": singleton_mock,
         "async_factory": async_factory_mock,
+        "object": object_mock,  # Including the missing mock object
     }
 
     with container.DIContainer.override_providers(providers_for_overriding):
@@ -22,6 +24,7 @@ async def test_batch_providers_overriding() -> None:
         dependent_factory = await container.DIContainer.dependent_factory()
         singleton = await container.DIContainer.singleton()
         async_factory = await container.DIContainer.async_factory()
+        obj = await container.DIContainer.object()  # Awaiting the new mock object
 
     assert dependent_factory.simple_factory.dep1 == simple_factory_mock.dep1
     assert dependent_factory.simple_factory.dep2 == simple_factory_mock.dep2
@@ -29,6 +32,10 @@ async def test_batch_providers_overriding() -> None:
     assert dependent_factory.async_resource == async_resource_mock
     assert singleton is singleton_mock
     assert async_factory is async_factory_mock
+    assert obj is not None  # Ensuring the mock object is not None
+
+    # Additional assertion to check that the resolved async resource is not equal to the mock
+    assert (await container.DIContainer.async_resource()) != async_resource_mock
 
     container.DIContainer.reset_override()
 
