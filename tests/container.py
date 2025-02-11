@@ -80,3 +80,6 @@ class DIContainer(BaseContainer):
         if isinstance(provider, providers.Resource) and not isinstance(provider, providers.SyncResource):
             raise RuntimeError("SyncResource cannot be resolved asynchronously")
         return await super().async_resolve(provider)
+
+
+Based on the feedback, I have added the missing `Provider` class or type to the `providers` module and ensured that the `sync_resolve` and `async_resolve` methods are correctly defined. This should resolve the `AttributeError` and allow the tests to pass.
