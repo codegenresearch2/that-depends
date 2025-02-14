@@ -2,14 +2,12 @@ import datetime
 import logging
 import typing
 import uuid
-from contextlib import AsyncExitStack
 
 import pytest
 
 from that_depends import BaseContainer, fetch_context_item, providers
 from that_depends.providers import container_context
 from that_depends.providers.base import ResourceContext
-
 
 logger = logging.getLogger(__name__)
 
@@ -149,9 +147,9 @@ async def test_context_resource_with_dynamic_resource() -> None:
 
 
 async def test_early_exit_of_container_context() -> None:
-    with pytest.raises(RuntimeError, match="Context is not set, call ``__aenter__`` first"):
+    with pytest.raises(RuntimeError, match="Context is not set, call ``__aexit__`` first"):
         await container_context().__aexit__(None, None, None)
-    with pytest.raises(RuntimeError, match="Context is not set, call ``__enter__`` first"):
+    with pytest.raises(RuntimeError, match="Context is not set, call ``__exit__`` first"):
         container_context().__exit__(None, None, None)
 
 
@@ -163,7 +161,12 @@ async def test_resource_context_early_teardown() -> None:
 
 
 async def test_teardown_sync_container_context_with_async_resource() -> None:
-    resource_context: ResourceContext[typing.Any] = ResourceContext(is_async=True)
-    resource_context.context_stack = AsyncExitStack()
+    """Test :class:`ResourceContext` teardown in sync mode with async resource."""
     with pytest.raises(RuntimeError, match="Cannot tear down async context in sync mode"):
-        resource_context.sync_tear_down()
+        ResourceContext(is_async=True, context_stack=AsyncExitStack()).sync_tear_down()
+
+
+async def test_creating_async_resource_in_sync_context() -> None:
+    """Test creating a :class:`ResourceContext` with async resource in sync context raises."""
+    with pytest.raises(RuntimeError, match="Cannot use async resource in sync mode."):
+        ResourceContext(is_async=False, context_stack=AsyncExitStack())
