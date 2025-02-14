@@ -10,7 +10,6 @@ from types import TracebackType
 
 from that_depends.providers.base import AbstractResource, ResourceContext
 
-
 logger: typing.Final = logging.getLogger(__name__)
 T_co = typing.TypeVar("T_co", covariant=True)
 P = typing.ParamSpec("P")
@@ -29,13 +28,7 @@ ContextType = dict[str, typing.Any]
 class container_context(  # noqa: N801
     AbstractAsyncContextManager[ContextType], AbstractContextManager[ContextType]
 ):
-    """Manage the context of ContextResources.
-
-    Can be entered using ``async with container_context()`` or with ``with container_context()``
-    as async-context-manager or context-manager respectively.
-    When used as async-context-manager, it will allow setup & teardown of both sync and async resources.
-    When used as sync-context-manager, it will only allow setup & teardown of sync resources.
-    """
+    """Manage the context of ContextResources.\n\n    Can be entered using ``async with container_context()`` or with ``with container_context()``\n    as async-context-manager or context-manager respectively.\n    When used as async-context-manager, it will allow setup & teardown of both sync and async resources.\n    When used as sync-context-manager, it will only allow setup & teardown of sync resources.\n    """
 
     __slots__ = "_initial_context", "_context_token"
 
@@ -65,7 +58,6 @@ class container_context(  # noqa: N801
         try:
             for context_item in reversed(_CONTAINER_CONTEXT.get().values()):
                 if isinstance(context_item, ResourceContext):
-                    # we don't need to handle the case where the ResourceContext is async
                     context_item.sync_tear_down()
 
         finally:
@@ -126,11 +118,6 @@ def _get_container_context() -> dict[str, typing.Any]:
 
 
 def _is_container_context_async() -> bool:
-    """Check if the current container context is async.
-
-    :return: Whether the current container context is async.
-    :rtype: bool
-    """
     return typing.cast(bool, _get_container_context().get(_ASYNC_CONTEXT_KEY, False))
 
 
