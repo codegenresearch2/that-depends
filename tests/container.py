@@ -66,4 +66,17 @@ class DIContainer(BaseContainer):
         async_resource=async_resource.cast,
     )
     singleton = providers.Singleton(SingletonFactory, dep1=True)
-    object = providers.Object(object())
+
+    def sync_resolve(self, provider: providers.Provider) -> typing.Any:
+        if isinstance(provider, providers.AsyncFactory):
+            raise RuntimeError("AsyncFactory cannot be resolved synchronously")
+        elif isinstance(provider, providers.Resource):
+            raise RuntimeError("AsyncResource cannot be resolved synchronously")
+        return super().sync_resolve(provider)
+
+    async def async_resolve(self, provider: providers.Provider) -> typing.Any:
+        if isinstance(provider, providers.Factory):
+            raise RuntimeError("Factory cannot be resolved asynchronously")
+        elif isinstance(provider, providers.Resource):
+            raise RuntimeError("SyncResource cannot be resolved asynchronously")
+        return await super().async_resolve(provider)
