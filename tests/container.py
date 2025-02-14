@@ -66,4 +66,43 @@ class DIContainer(BaseContainer):
         async_resource=async_resource.cast,
     )
     singleton = providers.Singleton(SingletonFactory, dep1=True)
-    object = providers.Object(object())
+
+    @staticmethod
+    def override_sync_resource():
+        return providers.Resource(lambda: datetime.datetime.now(tz=datetime.timezone.utc))
+
+    @staticmethod
+    def override_async_resource():
+        return providers.Resource(lambda: datetime.datetime.now(tz=datetime.timezone.utc))
+
+    @staticmethod
+    def override_simple_factory():
+        return providers.Factory(SimpleFactory, dep1="override_text", dep2=456)
+
+    @staticmethod
+    def override_async_factory():
+        async def async_factory_override(now: datetime.datetime) -> datetime.datetime:
+            return now + datetime.timedelta(hours=2)
+        return providers.AsyncFactory(async_factory_override, DIContainer.override_async_resource().cast)
+
+    @staticmethod
+    def override_dependent_factory():
+        return providers.Factory(
+            DependentFactory,
+            simple_factory=DIContainer.override_simple_factory().cast,
+            sync_resource=DIContainer.override_sync_resource().cast,
+            async_resource=DIContainer.override_async_resource().cast,
+        )
+
+    @staticmethod
+    def override_singleton():
+        return providers.Singleton(SingletonFactory, dep1=False)
+
+    @classmethod
+    def override_providers(cls):
+        cls.sync_resource = cls.override_sync_resource()
+        cls.async_resource = cls.override_async_resource()
+        cls.simple_factory = cls.override_simple_factory()
+        cls.async_factory = cls.override_async_factory()
+        cls.dependent_factory = cls.override_dependent_factory()
+        cls.singleton = cls.override_singleton()
