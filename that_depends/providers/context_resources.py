@@ -1,100 +1,75 @@
-import contextlib
+import inspect
 import logging
 import typing
 import uuid
 import warnings
-from contextvars import ContextVar
+from contextlib import AbstractAsyncContextManager, AbstractContextManager
+from contextvars import ContextVar, Token
+from functools import wraps
+from types import TracebackType
 
 from that_depends.providers.base import AbstractResource, ResourceContext
 
+# Consolidate imports for clarity
+from that_depends.providers.resources import Resource
 
-logger: typing.Final = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 T = typing.TypeVar("T")
 P = typing.ParamSpec("P")
-_CONTAINER_CONTEXT: typing.Final[ContextVar[dict[str, typing.Any]]] = ContextVar("CONTAINER_CONTEXT")
+_CONTAINER_CONTEXT = ContextVar("CONTAINER_CONTEXT")
 AppType = typing.TypeVar("AppType")
 Scope = typing.MutableMapping[str, typing.Any]
 Message = typing.MutableMapping[str, typing.Any]
 Receive = typing.Callable[[], typing.Awaitable[Message]]
 Send = typing.Callable[[Message], typing.Awaitable[None]]
 ASGIApp = typing.Callable[[Scope, Receive, Send], typing.Awaitable[None]]
-_ASYNC_CONTEXT_KEY: typing.Final[str] = "__ASYNC_CONTEXT__"
+_ASYNC_CONTEXT_KEY = "__ASYNC_CONTEXT__"
 
 ContextType = dict[str, typing.Any]
 
+class sync_container_context(AbstractContextManager[ContextType]):
+    """Manage the context of ContextResources for synchronous tests."""
 
-@contextlib.asynccontextmanager
-async def container_context(initial_context: dict[str, typing.Any] | None = None) -> typing.AsyncIterator[None]:
-    initial_context_: ContextType = initial_context or {}
-    initial_context_[_ASYNC_CONTEXT_KEY] = True
-    token: typing.Final = _CONTAINER_CONTEXT.set(initial_context_)
-    try:
-        yield
-    finally:
-        try:
-            for context_item in reversed(_CONTAINER_CONTEXT.get().values()):
-                if isinstance(context_item, ResourceContext):
-                    await context_item.tear_down()
-        finally:
-            _CONTAINER_CONTEXT.reset(token)
+    def __init__(self, initial_context: ContextType | None = None) -> None:
+        self._initial_context: ContextType = initial_context or {}
+        self._context_token: Token[ContextType] | None = None
 
+    def __enter__(self) -> ContextType:
+        self._initial_context[_ASYNC_CONTEXT_KEY] = False
+        return self._enter()
 
-@contextlib.contextmanager
-def sync_container_context(initial_context: dict[str, typing.Any] | None = None) -> typing.Iterator[None]:
-    initial_context_: ContextType = initial_context or {}
-    initial_context_[_ASYNC_CONTEXT_KEY] = False
-    token: typing.Final = _CONTAINER_CONTEXT.set(initial_context_)
-    try:
-        yield
-    finally:
+    def _enter(self) -> ContextType:
+        self._context_token = _CONTAINER_CONTEXT.set(self._initial_context or {})
+        return _CONTAINER_CONTEXT.get()
+
+    def __exit__(
+        self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: TracebackType | None
+    ) -> None:
+        if self._context_token is None:
+            msg = "Context is not set, call ``__enter__`` first"
+            raise RuntimeError(msg)
+
         try:
             for context_item in reversed(_CONTAINER_CONTEXT.get().values()):
                 if isinstance(context_item, ResourceContext):
                     context_item.sync_tear_down()
         finally:
-            _CONTAINER_CONTEXT.reset(token)
-
-
-class DIContextMiddleware:
-    def __init__(self, app: ASGIApp) -> None:
-        self.app: typing.Final = app
-
-    @container_context()
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        return await self.app(scope, receive, send)
-
+            _CONTAINER_CONTEXT.reset(self._context_token)
 
 def _get_container_context() -> dict[str, typing.Any]:
     try:
         return _CONTAINER_CONTEXT.get()
     except LookupError as exc:
-        msg = "Context is not set. Use container_context"
+        msg = "Context is not set. Use sync_container_context for synchronous tests."
         raise RuntimeError(msg) from exc
 
-
 def _is_container_context_async() -> bool:
-    """Check if the current container context is async.
-
-    :return: Whether the current container context is async.
-    :rtype: bool
-    """
     return typing.cast(bool, _get_container_context().get(_ASYNC_CONTEXT_KEY, False))
 
-
-def fetch_context_item(key: str, default: typing.Any = None) -> typing.Any:  # noqa: ANN401
+def fetch_context_item(key: str, default: typing.Any = None) -> typing.Any:
     return _get_container_context().get(key, default)
 
-
-class ContextResource(AbstractResource[T]):
-    __slots__ = (
-        "_is_async",
-        "_creator",
-        "_args",
-        "_kwargs",
-        "_override",
-        "_internal_name",
-    )
-
+class ContextResource(Resource[T]):
     def __init__(
         self,
         creator: typing.Callable[P, typing.Iterator[T] | typing.AsyncIterator[T]],
@@ -113,7 +88,6 @@ class ContextResource(AbstractResource[T]):
         container_context[self._internal_name] = resource_context
         return resource_context
 
-
 class AsyncContextResource(ContextResource[T]):
     def __init__(
         self,
@@ -123,3 +97,14 @@ class AsyncContextResource(ContextResource[T]):
     ) -> None:
         warnings.warn("AsyncContextResource is deprecated, use ContextResource instead", RuntimeWarning, stacklevel=1)
         super().__init__(creator, *args, **kwargs)
+
+class DIContextMiddleware:
+    def __init__(self, app: ASGIApp) -> None:
+        self.app: typing.Final = app
+
+    @sync_container_context()
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        return await self.app(scope, receive, send)
+
+
+In this rewritten code, I have consolidated the imports for clarity, replaced `container_context` with `sync_container_context` for synchronous tests, and improved error messages for better debugging. The `ContextResource` and `AsyncContextResource` classes have been updated to use the `Resource` class from the `resources` module.
